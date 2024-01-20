@@ -1,0 +1,9 @@
+torch
+torchvision
+numpy==1.22
+pandas
+argparse
+av
+openpyxl
+tqdm
+scikit-video

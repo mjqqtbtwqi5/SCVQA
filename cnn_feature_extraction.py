@@ -19,11 +19,12 @@ from model import ResNet50
 # from engine import Engine
 
 if __name__ == '__main__':
+    print("="*50)
 
     DATABASE = "CSCVQ"
     CNN_MODULE = "ResNet50"
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-    FRAME_BATCH_SIZE = 8
+    FRAME_BATCH_SIZE = 10
 
     SOURCE_DIR = Path(f"source/{DATABASE}/")
     SOURCE_VIDEO_DIR = Path(f"source/{DATABASE}/videos/")
@@ -34,18 +35,21 @@ if __name__ == '__main__':
     DATA_VIDEO_MOS_FILE = Path(f"data/{DATABASE}/CSCVQ1.0-MOS.xlsx")
 
     FEATURE_DIR = Path(f"feature/{DATABASE}/{CNN_MODULE}/")
+
+    print(f"database: {DATABASE}, CNN module: {CNN_MODULE}, device: {DEVICE}, frame_batch_size: {FRAME_BATCH_SIZE}")
+
     if not os.path.exists(FEATURE_DIR):
         FEATURE_DIR.mkdir(parents=True, exist_ok=True)
 
     if not os.path.exists(DATA_DIR) and not os.path.exists(SOURCE_DIR):
-        print(f"Not source found to be extracted in {SOURCE_DIR}")
+        print(f"No source found to be extracted in {SOURCE_DIR}")
         sys.exit()
 
-    print(f"database: {DATABASE}, CNN module: {CNN_MODULE}, device: {DEVICE}, frame_batch_size: {FRAME_BATCH_SIZE}")
-
+    # ==================================================
     # 1. Extract video data and score data
     # ==================================================
     # Video
+    print("="*50)
     if os.path.exists(DATA_VIDEO_DIR):
         print(f"Video data exists in {DATA_VIDEO_DIR}/")
     else:
@@ -61,11 +65,15 @@ if __name__ == '__main__':
     if os.path.exists(DATA_VIDEO_MOS_FILE):
         print(f"MOS data exists in {DATA_VIDEO_MOS_FILE}")
     else:
+        print(f"Copying {DATABASE} MOS: {SOURCE_VIDEO_MOS_FILE}")
         DATA_DIR.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(SOURCE_VIDEO_MOS_FILE, DATA_VIDEO_MOS_FILE)
+    
+    print(f"{DATABASE} data in: {DATA_DIR}")
     # ==================================================
     # 2. Prepare extraction data
     # ==================================================
+    print("="*50)
     dataset_df = pd.read_excel(str(DATA_VIDEO_MOS_FILE),
                                header=None)
     dataset_df = dataset_df[:-1]
@@ -75,10 +83,11 @@ if __name__ == '__main__':
                            height=720,
                            width=1280,
                            dataset_df=dataset_df)
+    print(f"Number of video data to be extracted: {len(dataset)}")
     # ==================================================
     # 3. Extract CNN features
     # ==================================================
-    print(f"Number of video to be extracted: {len(dataset)}")
+    print("="*50)
 
     start_time = timer()
 
@@ -87,6 +96,7 @@ if __name__ == '__main__':
     with torch.inference_mode():
         for i in tqdm(range(len(dataset))):
             video, mos = dataset[i]
+            video_name = dataset.get_video_name(i)
 
             current = 0
             end_frame = len(video)
@@ -98,7 +108,7 @@ if __name__ == '__main__':
             while current < end_frame:
                 head = current
                 tail = (head + FRAME_BATCH_SIZE) if (head + FRAME_BATCH_SIZE < end_frame) else end_frame
-                print(f"Video index: {i} | frames[{head}, {tail-1}]")
+                print(f"Extracting {video_name}: index[{i}] | frames[{head}, {tail-1}]")
                 batch_frames = video[head:tail]
 
                 mean, std = resnet50(batch_frames)
@@ -107,14 +117,14 @@ if __name__ == '__main__':
 
                 current += FRAME_BATCH_SIZE
 
-            cnn_feature = torch.cat((feature_mean, feature_std), 1).squeeze()
-            cnn_feature = cnn_feature.unsqueeze(dim=0)
+            cnn_feature = torch.cat((feature_mean, feature_std), 1).squeeze().numpy()
+            mos = torch.tensor(mos).numpy()
 
 
-            OUTPUT_DIR = Path(f"feature/{DATABASE}/{CNN_MODULE}/{i}")
+            OUTPUT_DIR = Path(f"feature/{DATABASE}/{CNN_MODULE}/{video_name}")
             if not os.path.exists(OUTPUT_DIR):
                 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-                np.save(f"{OUTPUT_DIR}/feature", cnn_feature.numpy())
+                np.save(f"{OUTPUT_DIR}/feature", cnn_feature)
                 np.save(f"{OUTPUT_DIR}/mos", mos)
     end_time = timer()
     print(f"Total extraction time: {datetime.timedelta(seconds=int(end_time-start_time))} (Hour:Minute:Second)")

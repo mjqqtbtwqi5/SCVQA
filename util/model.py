@@ -41,4 +41,34 @@ class SCVQA(nn.Module):
     def __init__(self) -> None:
         super().__init__()
 
-    
+        # self.regressor = nn.Sequential(
+        #     nn.Linear(in_features=4096,
+        #               out_features=128),
+        #     nn.LSTM(input_size=128,
+        #             hidden_size=128),
+        #     nn.Linear(in_features=128,
+        #               out_features=1),
+        # )
+        self.fc0 = nn.Linear(in_features=4096,
+                             out_features=128)
+        
+        self.lstm = nn.LSTM(input_size=128,
+                            hidden_size=32)
+        
+        self.fl = nn.Flatten()
+        
+        self.fc1 = nn.Linear(in_features=9600,
+                             out_features=1)
+
+    def forward(self, x):
+        print(f"x: {x.shape}")
+        x = self.fc0(x)
+        print(f"self.fc0(x): {x.shape}")
+        x, _ = self.lstm(x)
+        print(f"self.lstm(x): {x.shape}")
+        x = self.fl(x)
+        print(f"self.fl(x): {x.shape}")
+        x = self.fc1(x)
+        print(f"self.fc1(x): {x.shape}")
+
+        return x

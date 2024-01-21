@@ -105,6 +105,8 @@ if __name__ == '__main__':
             feature_std = torch.Tensor().to(device=DEVICE)
             cnn_feature = torch.Tensor().to(device=DEVICE)
 
+            mos = torch.tensor(mos).to(device=DEVICE).unsqueeze(dim=0)
+
             while current < end_frame:
                 head = current
                 tail = (head + FRAME_BATCH_SIZE) if (head + FRAME_BATCH_SIZE < end_frame) else end_frame
@@ -118,7 +120,7 @@ if __name__ == '__main__':
                 current += FRAME_BATCH_SIZE
 
             cnn_feature = torch.cat((feature_mean, feature_std), 1).squeeze().numpy()
-            mos = torch.tensor(mos).numpy()
+            mos = mos.numpy()
 
 
             OUTPUT_DIR = Path(f"feature/{DATABASE}/{CNN_MODULE}/{video_name}")

@@ -53,18 +53,13 @@ if __name__ == '__main__':
 
             feature = np.load(feature_file)
             feature = torch.from_numpy(feature).to(device=DEVICE)
+            # [frames, feature] torch.Size([300, 4096])
 
             mos = np.load(mos_file)
-            # mos = torch.from_numpy(mos).to(device=DEVICE)
-            mos = torch.from_numpy(mos).unsqueeze(dim=0).to(device=DEVICE)
+            mos = torch.from_numpy(mos).to(device=DEVICE)
+            # [mos]             torch.Size([1])
 
             feature_data_list.append((feature, mos))
-
-
-    print(feature_data_list[0][0].shape)    # [frames, feature] torch.Size([300, 4096])
-    print(feature_data_list[0][1].shape)    # [mos]             torch.Size([])
-    
-    sys.exit()
 
     TRAIN_SPLIT = int(0.8 * len(feature_data_list))
     train_data_list = feature_data_list[:TRAIN_SPLIT]

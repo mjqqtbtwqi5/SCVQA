@@ -105,6 +105,7 @@ if __name__ == '__main__':
             feature_std = torch.Tensor().to(device=DEVICE)
             cnn_feature = torch.Tensor().to(device=DEVICE)
 
+            video = video.to(device=DEVICE).float()
             mos = torch.tensor(mos).to(device=DEVICE).unsqueeze(dim=0)
 
             while current < end_frame:

@@ -46,7 +46,7 @@ class VideoDataset(Dataset):
                                       self.width,
                                       inputdict={'-pix_fmt':'yuvj420p'})
         
-        video = torch.permute(torch.from_numpy(video), (0, 3, 1, 2)).float()
+        video = torch.permute(torch.from_numpy(video), (0, 3, 1, 2))
 
         return video, mos
     

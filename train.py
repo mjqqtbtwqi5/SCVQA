@@ -57,8 +57,8 @@ if __name__ == "__main__":
             # [frames, feature] | Tensor | torch.Size([300, 4096])
 
             mos = np.load(mos_file)
-            mos = torch.from_numpy(mos).to(device=DEVICE).squeeze()
-            # mos | float | torch.Size([])
+            mos = mos.item()
+            # mos | float | 55.5
 
             feature_data_list.append((feature, mos))
 

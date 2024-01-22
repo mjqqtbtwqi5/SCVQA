@@ -4,37 +4,38 @@ from torch.nn import Module
 from torch.utils.data import DataLoader
 from torch.optim import Optimizer
 from tqdm.auto import tqdm
+from scipy.stats import pearsonr, spearmanr
+
 
 class Engine:
-
     def __init__(self, device: str, epochs: int) -> None:
         self.device = device
         self.epochs = epochs
 
-    def train_step(self,
-                   model: Module,
-                   loss_fn: Module,
-                   optimizer: Optimizer,
-                   dataloader: DataLoader):
-        
+    def train_step(
+        self,
+        model: Module,
+        loss_fn: Module,
+        optimizer: Optimizer,
+        dataloader: DataLoader,
+    ):
         model.train()
-        
-        train_loss, train_acc = 0, 0
-        
-        for batch, (X, y) in enumerate(dataloader):
 
+        train_loss, train_PCC, train_SROCC = 0, 0, 0
+
+        y_list, y_pred_list = list(), list()
+
+        for batch, (X, y) in enumerate(dataloader):
             X, y = X.to(self.device), y.to(self.device)
 
+            # 1. Prediction
             y_pred = model(X)
-            print(f"y_pred: {y_pred[0][0].shape}")
+            y_pred = y_pred.to(device=self.device).unsqueeze(dim=0)
+            # print(f"y: {y} | y_pred: {y_pred}")
 
-            # y_pred = y_pred[0][0][0]
-            # print(f"y_pred: {y_pred}")
-
-            # 2. Calculate  and accumulate loss
+            # 2. Calculate and accumulate loss
             loss = loss_fn(y_pred, y)
             train_loss += loss.item()
-            print(f"train_loss: {loss.item()}")
 
             # 3. Optimizer zero grad
             optimizer.zero_grad()
@@ -45,83 +46,94 @@ class Engine:
             # 5. Optimizer step
             optimizer.step()
 
-            # Calculate and accumulate accuracy metric across all batches
-            # y_pred_class = torch.argmax(torch.softmax(y_pred, dim=1), dim=1)
-            # train_acc += (y_pred_class == y).sum().item()/len(y_pred)
+            # 6. Saving for metrics calculation
+            y_list.append(y.item())
+            y_pred_list.append(y_pred.item())
 
         train_loss = train_loss / len(dataloader)
-        # train_acc = train_acc / len(dataloader)
-        return train_loss, train_acc
+        train_PCC = pearsonr(y_pred_list, y_list)[0]
+        train_SROCC = spearmanr(y_pred_list, y_list)[0]
 
-    def test_step(self,
-                  model: Module,
-                  dataloader: DataLoader,
-                  loss_fn: Module):
-        
-        test_loss, test_acc = 0, 0
+        return train_loss, train_PCC, train_SROCC
 
-        model.eval() 
+    def test_step(self, model: Module, dataloader: DataLoader, loss_fn: Module):
+        test_loss, test_PCC, test_SROCC = 0, 0, 0
+
+        y_list, test_y_pred_list = list(), list()
+
+        model.eval()
         with torch.inference_mode():
             for batch, (X, y) in enumerate(dataloader):
-                
                 X, y = X.to(self.device), y.to(self.device)
 
-                X = torch.permute(X, (1, 0, 2, 3, 4))
+                # 1. Forward pass
+                test_y_pred = model(X)
+                test_y_pred = test_y_pred.to(device=self.device).unsqueeze(dim=0)
+                # print(f"y: {y} | test_y_pred: {test_y_pred}")
 
-                for x in X:
-            
-                    # 1. Forward pass
-                    test_pred_logits = model(x)
-                    print(f"test_pred_logits: {test_pred_logits}")
+                # 2. Calculate and accumulate loss
+                loss = loss_fn(test_y_pred, y)
+                test_loss += loss.item()
 
-                    # 2. Calculate and accumulate loss
-                    loss = loss_fn(test_pred_logits, y)
-                    # test_loss_img += loss.item()
-                    # test_loss += loss.item()
-                    # print(f"test_loss: {loss.item()}")
-                    
-                    # Calculate and accumulate accuracy
-                    # test_pred_labels = test_pred_logits.argmax(dim=1)
-                    # test_acc += ((test_pred_labels == y).sum().item()/len(test_pred_labels))
-                
-        # test_loss = test_loss / len(dataloader)
-        # test_acc = test_acc / len(dataloader)
-        return test_loss, test_acc
+                # 3. Saving for metrics calculation
+                y_list.append(y.item())
+                test_y_pred_list.append(test_y_pred.item())
 
-    def train(self,
-              model: Module,
-              optimizer: Optimizer,
-              loss_fn: Module,
-              train_dataloader: DataLoader,
-              test_dataloader: DataLoader):
+        test_loss = test_loss / len(dataloader)
+        test_PCC = pearsonr(test_y_pred_list, y_list)[0]
+        test_SROCC = spearmanr(test_y_pred_list, y_list)[0]
 
-        results = {"train_loss": [],
-                   "train_acc": [],
-                   "test_loss": [],
-                   "test_acc": []}
-        
+        return test_loss, test_PCC, test_SROCC
+
+    def train(
+        self,
+        model: Module,
+        optimizer: Optimizer,
+        loss_fn: Module,
+        train_dataloader: DataLoader,
+        test_dataloader: DataLoader,
+    ):
+        results = {
+            "train_loss": [],
+            "train_PCC": [],
+            "train_SROCC": [],
+            "test_loss": [],
+            "test_PCC": [],
+            "test_SROCC": [],
+        }
+
         for epoch in tqdm(range(self.epochs)):
+            train_loss, train_PCC, train_SROCC = self.train_step(
+                model=model,
+                loss_fn=loss_fn,
+                optimizer=optimizer,
+                dataloader=train_dataloader,
+            )
 
-            train_loss, train_acc = self.train_step(model=model,
-                                                    loss_fn=loss_fn,
-                                                    optimizer=optimizer,
-                                                    dataloader=train_dataloader)
-            
-            # test_loss, test_acc = self.test_step(model=model,
-            #                                      dataloader=test_dataloader,
-            #                                      loss_fn=loss_fn)
-            
+            test_loss, test_PCC, test_SROCC = self.test_step(
+                model=model, dataloader=test_dataloader, loss_fn=loss_fn
+            )
+
             print(
-                f"Epoch: {epoch+1} | "
-                f"train_loss: {train_loss:.4f} | "
-                f"train_acc: {train_acc:.4f} | "
-                # f"test_loss: {test_loss:.4f} | "
-                # f"test_acc: {test_acc:.4f}"
+                f"[Training] Epoch: {epoch+1} | "
+                f"MAE loss: {train_loss:.4f} | "
+                f"PCC: {train_PCC:.4f} | "
+                f"SROCC: {train_SROCC:.4f}"
+            )
+
+            print(
+                f"[Testing]  Epoch: {epoch+1} | "
+                f"MAE loss: {test_loss:.4f} | "
+                f"PCC: {test_PCC:.4f} | "
+                f"SROCC: {test_SROCC:.4f}"
             )
 
             results["train_loss"].append(train_loss)
-            results["train_acc"].append(train_acc)
-            # results["test_loss"].append(test_loss)
-            # results["test_acc"].append(test_acc)
+            results["train_PCC"].append(train_PCC)
+            results["train_SROCC"].append(train_SROCC)
+
+            results["test_loss"].append(test_loss)
+            results["test_PCC"].append(test_PCC)
+            results["test_SROCC"].append(test_SROCC)
 
         return results

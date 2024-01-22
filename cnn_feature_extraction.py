@@ -13,13 +13,13 @@ import os
 import shutil
 
 import sys
+
 sys.path.append("./util")
 from dataset import VideoDataset
 from model import ResNet50
-# from engine import Engine
 
-if __name__ == '__main__':
-    print("="*50)
+if __name__ == "__main__":
+    print("=" * 50)
 
     DATABASE = "CSCVQ"
     CNN_MODULE = "ResNet50"
@@ -36,7 +36,9 @@ if __name__ == '__main__':
 
     FEATURE_DIR = Path(f"feature/{DATABASE}/{CNN_MODULE}/")
 
-    print(f"database: {DATABASE}, CNN module: {CNN_MODULE}, device: {DEVICE}, frame_batch_size: {FRAME_BATCH_SIZE}")
+    print(
+        f"database: {DATABASE}, CNN module: {CNN_MODULE}, device: {DEVICE}, frame_batch_size: {FRAME_BATCH_SIZE}"
+    )
 
     if not os.path.exists(FEATURE_DIR):
         FEATURE_DIR.mkdir(parents=True, exist_ok=True)
@@ -49,7 +51,7 @@ if __name__ == '__main__':
     # 1. Extract video data and score data
     # ==================================================
     # Video
-    print("="*50)
+    print("=" * 50)
     if os.path.exists(DATA_VIDEO_DIR):
         print(f"Video data exists in {DATA_VIDEO_DIR}/")
     else:
@@ -68,26 +70,24 @@ if __name__ == '__main__':
         print(f"Copying {DATABASE} MOS: {SOURCE_VIDEO_MOS_FILE}")
         DATA_DIR.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(SOURCE_VIDEO_MOS_FILE, DATA_VIDEO_MOS_FILE)
-    
+
     print(f"{DATABASE} data in: {DATA_DIR}")
     # ==================================================
     # 2. Prepare extraction data
     # ==================================================
-    print("="*50)
-    dataset_df = pd.read_excel(str(DATA_VIDEO_MOS_FILE),
-                               header=None)
+    print("=" * 50)
+    dataset_df = pd.read_excel(str(DATA_VIDEO_MOS_FILE), header=None)
     dataset_df = dataset_df[:-1]
     # Delete last row that contains invalid label
 
-    dataset = VideoDataset(video_dir=str(DATA_VIDEO_DIR),
-                           height=720,
-                           width=1280,
-                           dataset_df=dataset_df)
+    dataset = VideoDataset(
+        video_dir=str(DATA_VIDEO_DIR), height=720, width=1280, dataset_df=dataset_df
+    )
     print(f"Number of video data to be extracted: {len(dataset)}")
     # ==================================================
     # 3. Extract CNN features
     # ==================================================
-    print("="*50)
+    print("=" * 50)
 
     start_time = timer()
 
@@ -110,7 +110,11 @@ if __name__ == '__main__':
 
             while current < end_frame:
                 head = current
-                tail = (head + FRAME_BATCH_SIZE) if (head + FRAME_BATCH_SIZE < end_frame) else end_frame
+                tail = (
+                    (head + FRAME_BATCH_SIZE)
+                    if (head + FRAME_BATCH_SIZE < end_frame)
+                    else end_frame
+                )
                 print(f"Extracting {video_name}: index[{i}] | frames[{head}, {tail-1}]")
                 batch_frames = video[head:tail]
 
@@ -123,11 +127,12 @@ if __name__ == '__main__':
             cnn_feature = torch.cat((feature_mean, feature_std), 1).squeeze().numpy()
             mos = mos.numpy()
 
-
             OUTPUT_DIR = Path(f"feature/{DATABASE}/{CNN_MODULE}/{video_name}")
             if not os.path.exists(OUTPUT_DIR):
                 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
                 np.save(f"{OUTPUT_DIR}/feature", cnn_feature)
                 np.save(f"{OUTPUT_DIR}/mos", mos)
     end_time = timer()
-    print(f"Total extraction time: {datetime.timedelta(seconds=int(end_time-start_time))} (Hour:Minute:Second)")
+    print(
+        f"Total extraction time: {datetime.timedelta(seconds=int(end_time-start_time))} (Hour:Minute:Second)"
+    )

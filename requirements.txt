@@ -6,3 +6,4 @@ av
 openpyxl
 tqdm
 scikit-video
+scipy

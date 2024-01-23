@@ -57,8 +57,9 @@ if __name__ == "__main__":
             # [frames, feature] | Tensor | torch.Size([300, 4096])
 
             mos = np.load(mos_file)
-            mos = mos.item()
-            # mos | float | 55.5
+            mos = torch.from_numpy(mos).to(device=DEVICE).squeeze()
+            # mos | Tensor | torch.Size([])
+            print(feature.shape, mos.shape)
 
             feature_data_list.append((feature, mos))
 
@@ -96,7 +97,8 @@ if __name__ == "__main__":
     model = SCVQA().to(device=DEVICE)
 
     loss_fn = nn.L1Loss()
-    optimizer = torch.optim.Adam(params=model.parameters(), lr=0.01)
+    # loss_fn = nn.MSELoss()
+    optimizer = torch.optim.Adam(params=model.parameters(), lr=0.001)
 
     engine = Engine(device=DEVICE, epochs=NUM_EPOCHS)
 
@@ -114,5 +116,5 @@ if __name__ == "__main__":
     )
     # print(model_results)
     print(
-        f"Total number of epochs: {NUM_EPOCHS} - Total number of results: {len(model_results['train_loss'])}"
+        f"Total number of epochs: {NUM_EPOCHS} | Total number of results: {len(model_results['train_loss'])}"
     )

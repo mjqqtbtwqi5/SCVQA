@@ -44,19 +44,22 @@ class SCVQA(nn.Module):
     def __init__(self) -> None:
         super().__init__()
 
-        self.fc0 = nn.Linear(in_features=4096, out_features=32)
+        self.fc0 = nn.Linear(in_features=4096, out_features=128)
 
         self.lstm = nn.LSTM(
-            input_size=32, hidden_size=64, num_layers=2, batch_first=True
+            input_size=128, hidden_size=64, num_layers=1, batch_first=True
         )
 
         self.fc = nn.Linear(in_features=64, out_features=1)
 
     def forward(self, x):
         x = self.fc0(x)
-
+        # h0 = torch.zeros(2, 1, 64)
+        # c0 = torch.zeros(2, 1, 64)
         x, _ = self.lstm(x)
+        # x, _ = self.lstm(x, (h0, c0))
 
+        # x = self.fc(x[:, -1, :])
         x = self.fc(x)
 
         x = torch.mean(x)

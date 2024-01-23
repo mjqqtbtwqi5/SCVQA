@@ -59,7 +59,6 @@ if __name__ == "__main__":
             mos = np.load(mos_file)
             mos = torch.from_numpy(mos).to(device=DEVICE).squeeze()
             # mos | Tensor | torch.Size([])
-            print(feature.shape, mos.shape)
 
             feature_data_list.append((feature, mos))
 

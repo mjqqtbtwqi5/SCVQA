@@ -28,3 +28,7 @@ python cnn_feature_extraction.py
 
 conda deactivate
 ```
+
+# Google Colab training
+
+train.ipynb

@@ -25,6 +25,7 @@ if __name__ == "__main__":
     CNN_MODULE = "ResNet50"
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
     FRAME_BATCH_SIZE = 10
+    MAX_FRAME_SIZE = 303
 
     SOURCE_DIR = Path(f"source/{DATABASE}/")
     SOURCE_VIDEO_DIR = Path(f"source/{DATABASE}/videos/")
@@ -81,7 +82,11 @@ if __name__ == "__main__":
     # Delete last row that contains invalid label
 
     dataset = VideoDataset(
-        video_dir=str(DATA_VIDEO_DIR), height=720, width=1280, dataset_df=dataset_df
+        video_dir=str(DATA_VIDEO_DIR),
+        height=720,
+        width=1280,
+        dataset_df=dataset_df,
+        max_frame_size=MAX_FRAME_SIZE,
     )
     print(f"Number of video data to be extracted: {len(dataset)}")
     # ==================================================
@@ -95,8 +100,13 @@ if __name__ == "__main__":
     resnet50.eval()
     with torch.inference_mode():
         for i in tqdm(range(len(dataset))):
-            video, mos = dataset[i]
             video_name = dataset.get_video_name(i)
+
+            OUTPUT_DIR = Path(f"feature/{DATABASE}/{CNN_MODULE}/{video_name}")
+            if os.path.exists(OUTPUT_DIR):
+                continue
+
+            video, mos = dataset[i]
 
             current = 0
             end_frame = len(video)
@@ -105,7 +115,7 @@ if __name__ == "__main__":
             feature_std = torch.Tensor().to(device=DEVICE)
             cnn_feature = torch.Tensor().to(device=DEVICE)
 
-            video = video.to(device=DEVICE).float()
+            video = video.to(device=DEVICE)
             mos = torch.tensor(mos).to(device=DEVICE).unsqueeze(dim=0)
 
             while current < end_frame:
@@ -124,8 +134,11 @@ if __name__ == "__main__":
 
                 current += FRAME_BATCH_SIZE
 
-            cnn_feature = torch.cat((feature_mean, feature_std), 1).squeeze().numpy()
-            mos = mos.numpy()
+            cnn_feature = (
+                torch.cat((feature_mean, feature_std), 1).squeeze().cpu().numpy()
+            )
+
+            mos = mos.cpu().numpy()
 
             OUTPUT_DIR = Path(f"feature/{DATABASE}/{CNN_MODULE}/{video_name}")
             if not os.path.exists(OUTPUT_DIR):

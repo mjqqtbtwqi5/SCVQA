@@ -24,12 +24,18 @@ class FeatureDataset(Dataset):
 
 class VideoDataset(Dataset):
     def __init__(
-        self, video_dir: str, height: int, width: int, dataset_df: DataFrame
+        self,
+        video_dir: str,
+        height: int,
+        width: int,
+        dataset_df: DataFrame,
+        max_frame_size: int,
     ) -> None:
         self.video_dir = video_dir
         self.height = height
         self.width = width
         self.dataset_df = dataset_df
+        self.max_frame_size = max_frame_size
 
     def get_video_name(self, index: int) -> str:
         row = self.dataset_df.iloc[index]
@@ -45,7 +51,15 @@ class VideoDataset(Dataset):
             video_path, self.height, self.width, inputdict={"-pix_fmt": "yuvj420p"}
         )
 
-        video = torch.permute(torch.from_numpy(video), (0, 3, 1, 2))
+        video = torch.permute(torch.from_numpy(video), (0, 3, 1, 2)).float()
+        # frame, channel, height, width
+
+        f, c, h, w = video.size()
+
+        if f < self.max_frame_size:
+            gap = self.max_frame_size - f
+            zero_padding = torch.zeros([gap, c, h, w])
+            video = torch.cat((video, zero_padding), 0)
 
         return video, mos
 

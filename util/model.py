@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 from torch import Tensor
+
+from torchvision import transforms
 from torchvision.models import resnet50, ResNet50_Weights
 
 
@@ -9,12 +11,16 @@ class ResNet50(nn.Module):
         super().__init__()
 
         self.weights = ResNet50_Weights.IMAGENET1K_V2
-        self.transforms = self.weights.transforms(antialias=True)
+        # self.transforms = self.weights.transforms(antialias=True)
         # https://pytorch.org/vision/main/models/generated/torchvision.models.resnet50.html
         # The images are resized to resize_size=[232] using interpolation=InterpolationMode.BILINEAR,
         # followed by a central crop of crop_size=[224].
         # Finally the values are first rescaled to [0.0, 1.0]
         # and then normalized using mean=[0.485, 0.456, 0.406] and std=[0.229, 0.224, 0.225].
+
+        self.transforms = transforms.Normalize(
+            mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+        )
 
         self.module_list = nn.Sequential(
             *list(resnet50(weights=self.weights).children())[:-2]
@@ -29,8 +35,7 @@ class ResNet50(nn.Module):
         )
 
     def forward(self, x):
-        for frame in x:
-            frame = self.transforms(frame)
+        x = self.transforms(x)
 
         for i, module in enumerate(self.module_list):
             x = module(x)

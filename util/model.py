@@ -46,26 +46,43 @@ class ResNet50(nn.Module):
 
 
 class SCVQA(nn.Module):
-    def __init__(self) -> None:
+    def __init__(self, input_size=64, hidden_size=16, num_layers=3) -> None:
         super().__init__()
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+        self.num_layers = num_layers
 
-        self.fc0 = nn.Linear(in_features=4096, out_features=128)
-
-        self.lstm = nn.LSTM(
-            input_size=128, hidden_size=64, num_layers=1, batch_first=True
+        self.fc0 = nn.Sequential(
+            nn.Linear(in_features=4096, out_features=1024),
+            nn.Linear(in_features=1024, out_features=256),
+            nn.Linear(in_features=256, out_features=64),
         )
 
-        self.fc = nn.Linear(in_features=64, out_features=1)
+        self.lstm = nn.LSTM(
+            input_size=input_size,
+            hidden_size=hidden_size,
+            num_layers=num_layers,
+            batch_first=True,
+        )
+
+        self.fc1 = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(in_features=4848, out_features=4096),
+            nn.Linear(in_features=4096, out_features=1024),
+            nn.Linear(in_features=1024, out_features=256),
+            nn.Linear(in_features=256, out_features=64),
+            nn.Linear(in_features=64, out_features=1),
+        )
 
     def forward(self, x):
+        batch_size = x.size(0)
+
         x = self.fc0(x)
-        # h0 = torch.zeros(2, 1, 64)
-        # c0 = torch.zeros(2, 1, 64)
-        x, _ = self.lstm(x)
-        # x, _ = self.lstm(x, (h0, c0))
 
-        # x = self.fc(x[:, -1, :])
-        x = self.fc(x)
+        h0 = torch.zeros(self.num_layers, batch_size, self.hidden_size)
+        c0 = torch.zeros(self.num_layers, batch_size, self.hidden_size)
+        x, _ = self.lstm(x, (h0, c0))
 
-        x = torch.mean(x)
+        x = self.fc1(x)
+
         return x

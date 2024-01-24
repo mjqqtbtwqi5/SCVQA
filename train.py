@@ -21,7 +21,7 @@ if __name__ == "__main__":
     DATABASE = "CSCVQ"
     CNN_MODULE = "ResNet50"
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-    BATCH_SIZE = 1
+    BATCH_SIZE = 5
     # NUM_WORKERS = os.cpu_count()
     NUM_WORKERS = 0
     NUM_EPOCHS = 500
@@ -44,8 +44,6 @@ if __name__ == "__main__":
         print(f"Video feature not exists in {FEATURE_DIR}/")
         sys.exit()
     else:
-        count = 0
-        os.scandir(FEATURE_DIR)
         video_feature_dir_list = [f.path for f in os.scandir(FEATURE_DIR) if f.is_dir()]
 
         for video_feature_dir in video_feature_dir_list:
@@ -62,6 +60,7 @@ if __name__ == "__main__":
 
             feature_data_list.append((feature, mos))
 
+    print(feature_data_list[0][1].shape)
     TRAIN_SPLIT = int(0.8 * len(feature_data_list))
     train_data_list = feature_data_list[:TRAIN_SPLIT]
     test_data_list = feature_data_list[TRAIN_SPLIT:]

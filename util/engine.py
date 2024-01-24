@@ -30,7 +30,7 @@ class Engine:
 
             # 1. Prediction
             y_pred = model(X)
-            y_pred = y_pred.to(device=self.device).unsqueeze(dim=0)
+            y_pred = y_pred.to(device=self.device).squeeze()
             # print(f"y: {y} | y_pred: {y_pred}")
 
             # 2. Calculate and accumulate loss
@@ -47,8 +47,9 @@ class Engine:
             optimizer.step()
 
             # 6. Saving for metrics calculation
-            y_list.append(y.item())
-            y_pred_list.append(y_pred.item())
+            for i in range(len(y)):
+                y_list.append(y[i].item())
+                y_pred_list.append(y_pred[i].item())
 
         train_loss = train_loss / len(dataloader)
         train_PCC = pearsonr(y_pred_list, y_list)[0]
@@ -68,16 +69,17 @@ class Engine:
 
                 # 1. Forward pass
                 test_y_pred = model(X)
-                test_y_pred = test_y_pred.to(device=self.device).unsqueeze(dim=0)
-                # print(f"y: {y} | test_y_pred: {test_y_pred}")
+                test_y_pred = test_y_pred.to(device=self.device).squeeze()
+                print(f"y: {y} | test_y_pred: {test_y_pred}")
 
                 # 2. Calculate and accumulate loss
                 loss = loss_fn(test_y_pred, y)
                 test_loss += loss.item()
 
                 # 3. Saving for metrics calculation
-                y_list.append(y.item())
-                test_y_pred_list.append(test_y_pred.item())
+                for i in range(len(y)):
+                    y_list.append(y[i].item())
+                    test_y_pred_list.append(test_y_pred[i].item())
 
         test_loss = test_loss / len(dataloader)
         test_PCC = pearsonr(test_y_pred_list, y_list)[0]

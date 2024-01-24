@@ -60,7 +60,6 @@ if __name__ == "__main__":
 
             feature_data_list.append((feature, mos))
 
-    print(feature_data_list[0][1].shape)
     TRAIN_SPLIT = int(0.8 * len(feature_data_list))
     train_data_list = feature_data_list[:TRAIN_SPLIT]
     test_data_list = feature_data_list[TRAIN_SPLIT:]
@@ -92,7 +91,9 @@ if __name__ == "__main__":
     torch.manual_seed(SEED)
     torch.cuda.manual_seed(SEED)
 
-    model = SCVQA().to(device=DEVICE)
+    model = SCVQA(input_size=64, hidden_size=16, num_layers=3, device=DEVICE).to(
+        device=DEVICE
+    )
 
     loss_fn = nn.L1Loss()
     # loss_fn = nn.MSELoss()
@@ -112,7 +113,6 @@ if __name__ == "__main__":
     print(
         f"Total training time: {datetime.timedelta(seconds=int(end_time-start_time))} (Hour:Minute:Second)"
     )
-    # print(model_results)
     print(
         f"Total number of epochs: {NUM_EPOCHS} | Total number of results: {len(model_results['train_loss'])}"
     )

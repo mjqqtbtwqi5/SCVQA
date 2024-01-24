@@ -31,7 +31,6 @@ class Engine:
             # 1. Prediction
             y_pred = model(X)
             y_pred = y_pred.to(device=self.device).squeeze()
-            # print(f"y: {y} | y_pred: {y_pred}")
 
             # 2. Calculate and accumulate loss
             loss = loss_fn(y_pred, y)
@@ -48,6 +47,7 @@ class Engine:
 
             # 6. Saving for metrics calculation
             for i in range(len(y)):
+                print(f"y: {y[i].item()} | y_pred: {y_pred[i].item()}")
                 y_list.append(y[i].item())
                 y_pred_list.append(y_pred[i].item())
 
@@ -70,7 +70,6 @@ class Engine:
                 # 1. Forward pass
                 test_y_pred = model(X)
                 test_y_pred = test_y_pred.to(device=self.device).squeeze()
-                print(f"y: {y} | test_y_pred: {test_y_pred}")
 
                 # 2. Calculate and accumulate loss
                 loss = loss_fn(test_y_pred, y)
@@ -78,6 +77,7 @@ class Engine:
 
                 # 3. Saving for metrics calculation
                 for i in range(len(y)):
+                    print(f"y: {y[i].item()} | y_pred: {test_y_pred[i].item()}")
                     y_list.append(y[i].item())
                     test_y_pred_list.append(test_y_pred[i].item())
 

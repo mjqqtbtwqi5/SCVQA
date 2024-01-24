@@ -46,11 +46,12 @@ class ResNet50(nn.Module):
 
 
 class SCVQA(nn.Module):
-    def __init__(self, input_size=64, hidden_size=16, num_layers=3) -> None:
+    def __init__(self, input_size=64, hidden_size=16, num_layers=3, device="") -> None:
         super().__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.num_layers = num_layers
+        self.device = device
 
         self.fc0 = nn.Sequential(
             nn.Linear(in_features=4096, out_features=1024),
@@ -79,8 +80,12 @@ class SCVQA(nn.Module):
 
         x = self.fc0(x)
 
-        h0 = torch.zeros(self.num_layers, batch_size, self.hidden_size)
-        c0 = torch.zeros(self.num_layers, batch_size, self.hidden_size)
+        h0 = torch.zeros(self.num_layers, batch_size, self.hidden_size).to(
+            device=self.device
+        )
+        c0 = torch.zeros(self.num_layers, batch_size, self.hidden_size).to(
+            device=self.device
+        )
         x, _ = self.lstm(x, (h0, c0))
 
         x = self.fc1(x)

@@ -1,6 +1,9 @@
 import torch
 from torch import Tensor
 from torch.utils.data import Dataset
+from torchvision import transforms
+
+from PIL import Image
 
 import skvideo
 import skvideo.io
@@ -37,31 +40,52 @@ class VideoDataset(Dataset):
         self.dataset_df = dataset_df
         self.max_frame_size = max_frame_size
 
-    def get_video_name(self, index: int) -> str:
+        self.vid_idx = 0
+        self.mos_idx = 21
+
+        self.mos_max = self.dataset_df[self.mos_idx].max()
+        self.mos_min = self.dataset_df[self.mos_idx].min()
+
+        self.transforms = transforms.Compose(
+            [
+                transforms.ToTensor(),
+                transforms.Normalize(
+                    mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+                ),
+            ]
+        )
+
+    def get_video_info(self, index: int) -> Tuple[str, float]:
         row = self.dataset_df.iloc[index]
-        video_name = str(row[0])
-        return video_name
+        file_name, mos = str(row[self.vid_idx]), float(row[self.mos_idx])
+        mos = (mos - self.mos_min) / (self.mos_max - self.mos_min)
+        return file_name, mos
 
     def load_video_mos(self, index: int) -> Tuple[Tensor, float]:
-        row = self.dataset_df.iloc[index]
-        file_name, mos = str(row[0]), float(row[21])
+        file_name, mos = self.get_video_info(index=index)
         video_path = f"{self.video_dir}/{file_name}"
 
         video = skvideo.io.vread(
             video_path, self.height, self.width, inputdict={"-pix_fmt": "yuvj420p"}
         )
 
-        video = torch.permute(torch.from_numpy(video), (0, 3, 1, 2)).float()
+        frame_size, height, width, channel = video.shape
+
+        if frame_size > self.max_frame_size:
+            frame_size = self.max_frame_size
+
+        transformed_video = torch.zeros([frame_size, channel, height, width])
+
+        for i in range(frame_size):
+            frame = video[i]
+            frame = Image.fromarray(frame)
+            frame = self.transforms(frame)
+            transformed_video[i] = frame
+        # video = torch.permute(torch.from_numpy(video), (0, 3, 1, 2)).float()
         # frame, channel, height, width
 
-        f, c, h, w = video.size()
-
-        if f < self.max_frame_size:
-            gap = self.max_frame_size - f
-            zero_padding = torch.zeros([gap, c, h, w])
-            video = torch.cat((video, zero_padding), 0)
-
-        return video, mos
+        # torch.float32, float
+        return transformed_video, mos
 
     def __len__(self) -> int:
         return len(self.dataset_df)

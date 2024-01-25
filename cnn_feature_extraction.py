@@ -24,8 +24,11 @@ if __name__ == "__main__":
     DATABASE = "CSCVQ"
     CNN_MODULE = "ResNet50"
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-    FRAME_BATCH_SIZE = 10
-    MAX_FRAME_SIZE = 303
+    FRAME_BATCH_SIZE = 64
+    MAX_FRAME_SIZE = 300
+
+    VIDEO_HEIGHT = 720
+    VIDEO_WIDTH = 1280
 
     SOURCE_DIR = Path(f"source/{DATABASE}/")
     SOURCE_VIDEO_DIR = Path(f"source/{DATABASE}/videos/")
@@ -83,8 +86,8 @@ if __name__ == "__main__":
 
     dataset = VideoDataset(
         video_dir=str(DATA_VIDEO_DIR),
-        height=720,
-        width=1280,
+        height=VIDEO_HEIGHT,
+        width=VIDEO_WIDTH,
         dataset_df=dataset_df,
         max_frame_size=MAX_FRAME_SIZE,
     )
@@ -100,7 +103,7 @@ if __name__ == "__main__":
     resnet50.eval()
     with torch.inference_mode():
         for i in tqdm(range(len(dataset))):
-            video_name = dataset.get_video_name(i)
+            video_name, _ = dataset.get_video_info(i)
 
             OUTPUT_DIR = Path(f"feature/{DATABASE}/{CNN_MODULE}/{video_name}")
             if os.path.exists(OUTPUT_DIR):
@@ -111,12 +114,11 @@ if __name__ == "__main__":
             current = 0
             end_frame = len(video)
 
+            video = video.to(device=DEVICE)
+
             feature_mean = torch.Tensor().to(device=DEVICE)
             feature_std = torch.Tensor().to(device=DEVICE)
             cnn_feature = torch.Tensor().to(device=DEVICE)
-
-            video = video.to(device=DEVICE)
-            mos = torch.tensor(mos).to(device=DEVICE).unsqueeze(dim=0)
 
             while current < end_frame:
                 head = current
@@ -135,10 +137,10 @@ if __name__ == "__main__":
                 current += FRAME_BATCH_SIZE
 
             cnn_feature = (
-                torch.cat((feature_mean, feature_std), 1).squeeze().cpu().numpy()
+                torch.cat((feature_mean, feature_std), 1).squeeze().numpy(force=True)
+                if torch.cuda.is_available()
+                else torch.cat((feature_mean, feature_std), 1).squeeze().numpy()
             )
-
-            mos = mos.cpu().numpy()
 
             OUTPUT_DIR = Path(f"feature/{DATABASE}/{CNN_MODULE}/{video_name}")
             if not os.path.exists(OUTPUT_DIR):

@@ -21,7 +21,7 @@ if __name__ == "__main__":
     DATABASE = "CSCVQ"
     CNN_MODULE = "ResNet50"
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-    BATCH_SIZE = 5
+    BATCH_SIZE = 4
     # NUM_WORKERS = os.cpu_count()
     NUM_WORKERS = 0
     NUM_EPOCHS = 500
@@ -55,8 +55,8 @@ if __name__ == "__main__":
             # [frames, feature] | Tensor | torch.Size([300, 4096])
 
             mos = np.load(mos_file)
-            mos = torch.from_numpy(mos).to(device=DEVICE).squeeze()
-            # mos | Tensor | torch.Size([])
+            mos = mos.item()
+            # mos | float
 
             feature_data_list.append((feature, mos))
 
@@ -91,12 +91,12 @@ if __name__ == "__main__":
     torch.manual_seed(SEED)
     torch.cuda.manual_seed(SEED)
 
-    model = SCVQA(input_size=64, hidden_size=16, num_layers=3, device=DEVICE).to(
+    model = SCVQA(device=DEVICE, input_size=64, hidden_size=16, num_layers=8).to(
         device=DEVICE
     )
 
-    loss_fn = nn.L1Loss()
-    # loss_fn = nn.MSELoss()
+    # loss_fn = nn.L1Loss()
+    loss_fn = nn.MSELoss()
     optimizer = torch.optim.Adam(params=model.parameters(), lr=0.001)
 
     engine = Engine(device=DEVICE, epochs=NUM_EPOCHS)

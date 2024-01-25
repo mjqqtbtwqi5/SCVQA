@@ -118,14 +118,14 @@ class Engine:
 
             print(
                 f"[Training] Epoch: {epoch+1} | "
-                f"MAE loss: {train_loss:.4f} | "
+                f"{type(loss_fn).__name__} loss: {train_loss:.4f} | "
                 f"PCC: {train_PCC:.4f} | "
                 f"SROCC: {train_SROCC:.4f}"
             )
 
             print(
                 f"[Testing]  Epoch: {epoch+1} | "
-                f"MAE loss: {test_loss:.4f} | "
+                f"{type(loss_fn).__name__} loss: {test_loss:.4f} | "
                 f"PCC: {test_PCC:.4f} | "
                 f"SROCC: {test_SROCC:.4f}"
             )

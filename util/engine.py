@@ -8,9 +8,17 @@ from scipy.stats import pearsonr, spearmanr
 
 
 class Engine:
-    def __init__(self, device: str, epochs: int) -> None:
+    def __init__(
+        self, device: str, epochs: int, mos_max: float, mos_min: float
+    ) -> None:
         self.device = device
         self.epochs = epochs
+        self.mos_max = mos_max
+        self.mos_min = mos_min
+
+    def up_scale(self, x):
+        x = x * (self.mos_max - self.mos_min) + self.mos_min
+        return x
 
     def train_step(
         self,
@@ -30,7 +38,6 @@ class Engine:
 
             # 1. Prediction
             y_pred = model(X)
-            y_pred = y_pred.to(device=self.device).squeeze()
 
             # 2. Calculate and accumulate loss
             loss = loss_fn(y_pred, y)
@@ -47,9 +54,11 @@ class Engine:
 
             # 6. Saving for metrics calculation
             for i in range(len(y)):
-                print(f"y: {y[i].item()} | y_pred: {y_pred[i].item()}")
-                y_list.append(y[i].item())
-                y_pred_list.append(y_pred[i].item())
+                _y = self.up_scale(y[i].item())
+                _y_pred = self.up_scale(y_pred[i].item())
+                # print(f"y: {_y} | y_pred: {_y_pred}")
+                y_list.append(_y)
+                y_pred_list.append(_y_pred)
 
         train_loss = train_loss / len(dataloader)
         train_PCC = pearsonr(y_pred_list, y_list)[0]
@@ -69,7 +78,6 @@ class Engine:
 
                 # 1. Forward pass
                 test_y_pred = model(X)
-                test_y_pred = test_y_pred.to(device=self.device).squeeze()
 
                 # 2. Calculate and accumulate loss
                 loss = loss_fn(test_y_pred, y)
@@ -77,9 +85,11 @@ class Engine:
 
                 # 3. Saving for metrics calculation
                 for i in range(len(y)):
-                    print(f"y: {y[i].item()} | y_pred: {test_y_pred[i].item()}")
-                    y_list.append(y[i].item())
-                    test_y_pred_list.append(test_y_pred[i].item())
+                    _y = self.up_scale(y[i].item())
+                    _test_y_pred = self.up_scale(test_y_pred[i].item())
+                    print(f"y: {_y} | test_y_pred: {_test_y_pred}")
+                    y_list.append(_y)
+                    test_y_pred_list.append(_test_y_pred)
 
         test_loss = test_loss / len(dataloader)
         test_PCC = pearsonr(test_y_pred_list, y_list)[0]

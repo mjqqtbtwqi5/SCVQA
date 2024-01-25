@@ -4,6 +4,7 @@ from torch.utils.data import DataLoader
 
 import os
 import numpy as np
+import pandas as pd
 from pathlib import Path
 import datetime
 from timeit import default_timer as timer
@@ -12,22 +13,28 @@ import sys
 
 sys.path.append("./util")
 from dataset import FeatureDataset
-from model import SCVQA
+from model import VQA_LSTM
 from engine import Engine
 
 if __name__ == "__main__":
+    # input_length = 240 * torch.ones(1, 1)
+    # aaa = torch.randn(1, 240, 1)
+    # qi = aaa[0, : int(input_length[0].numpy())]
+    # print(qi.shape)
+    # sys.exit()
     print("=" * 50)
 
     DATABASE = "CSCVQ"
     CNN_MODULE = "ResNet50"
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-    BATCH_SIZE = 4
+    BATCH_SIZE = 8
     # NUM_WORKERS = os.cpu_count()
     NUM_WORKERS = 0
     NUM_EPOCHS = 500
     SEED = 22035001
 
     FEATURE_DIR = Path(f"feature/{DATABASE}/{CNN_MODULE}/")
+    DATA_VIDEO_MOS_FILE = Path(f"data/{DATABASE}/CSCVQ1.0-MOS.xlsx")
 
     print(
         f"database: {DATABASE}, CNN module: {CNN_MODULE}, device: {DEVICE}, batch_size: {BATCH_SIZE}, num_workers: {NUM_WORKERS}, num_epochs: {NUM_EPOCHS}, seed: {SEED}"
@@ -37,6 +44,12 @@ if __name__ == "__main__":
     # 1. Data preparation
     # ==================================================
     print("=" * 50)
+
+    dataset_df = pd.read_excel(str(DATA_VIDEO_MOS_FILE), header=None)
+    dataset_df = dataset_df[:-1]
+    # Delete last row that contains invalid label
+    MOS_MAX = dataset_df[21].max()
+    MOS_MIN = dataset_df[21].min()
 
     feature_data_list = list()
 
@@ -51,11 +64,12 @@ if __name__ == "__main__":
             mos_file = f"{video_feature_dir}/mos.npy"
 
             feature = np.load(feature_file)
-            feature = torch.from_numpy(feature).to(device=DEVICE)
+            feature = torch.from_numpy(feature)
             # [frames, feature] | Tensor | torch.Size([300, 4096])
 
             mos = np.load(mos_file)
-            mos = mos.item()
+            mos = np.float32(mos.item())
+            mos = (mos - MOS_MIN) / (MOS_MAX - MOS_MIN)  # normalization
             # mos | float
 
             feature_data_list.append((feature, mos))
@@ -91,7 +105,7 @@ if __name__ == "__main__":
     torch.manual_seed(SEED)
     torch.cuda.manual_seed(SEED)
 
-    model = SCVQA(device=DEVICE, input_size=64, hidden_size=16, num_layers=8).to(
+    model = VQA_LSTM(device=DEVICE, input_size=64, hidden_size=32, num_layers=8).to(
         device=DEVICE
     )
 
@@ -99,7 +113,7 @@ if __name__ == "__main__":
     loss_fn = nn.MSELoss()
     optimizer = torch.optim.Adam(params=model.parameters(), lr=0.001)
 
-    engine = Engine(device=DEVICE, epochs=NUM_EPOCHS)
+    engine = Engine(device=DEVICE, epochs=NUM_EPOCHS, mos_max=MOS_MAX, mos_min=MOS_MIN)
 
     start_time = timer()
     model_results = engine.train(

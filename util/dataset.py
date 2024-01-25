@@ -43,9 +43,6 @@ class VideoDataset(Dataset):
         self.vid_idx = 0
         self.mos_idx = 21
 
-        self.mos_max = self.dataset_df[self.mos_idx].max()
-        self.mos_min = self.dataset_df[self.mos_idx].min()
-
         self.transforms = transforms.Compose(
             [
                 transforms.ToTensor(),
@@ -58,7 +55,6 @@ class VideoDataset(Dataset):
     def get_video_info(self, index: int) -> Tuple[str, float]:
         row = self.dataset_df.iloc[index]
         file_name, mos = str(row[self.vid_idx]), float(row[self.mos_idx])
-        mos = (mos - self.mos_min) / (self.mos_max - self.mos_min)
         return file_name, mos
 
     def load_video_mos(self, index: int) -> Tuple[Tensor, float]:

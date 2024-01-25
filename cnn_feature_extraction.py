@@ -24,7 +24,7 @@ if __name__ == "__main__":
     DATABASE = "CSCVQ"
     CNN_MODULE = "ResNet50"
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-    FRAME_BATCH_SIZE = 64
+    FRAME_BATCH_SIZE = 32
     MAX_FRAME_SIZE = 300
 
     VIDEO_HEIGHT = 720
@@ -142,7 +142,6 @@ if __name__ == "__main__":
                 else torch.cat((feature_mean, feature_std), 1).squeeze().numpy()
             )
 
-            OUTPUT_DIR = Path(f"feature/{DATABASE}/{CNN_MODULE}/{video_name}")
             if not os.path.exists(OUTPUT_DIR):
                 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
                 np.save(f"{OUTPUT_DIR}/feature", cnn_feature)

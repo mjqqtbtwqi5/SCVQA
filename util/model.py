@@ -32,6 +32,21 @@ class ResNet50(nn.Module):
                 return mean, std
 
 
+class ANN(nn.Module):
+    def __init__(self, input_size=4096, reduced_size=128, n_ANNlayers=1, dropout_p=0.5):
+        super().__init__()
+        self.n_ANNlayers = n_ANNlayers
+        self.fc0 = nn.Linear(input_size, reduced_size)
+        self.dropout = nn.Dropout(p=dropout_p)
+        self.fc = nn.Linear(reduced_size, reduced_size)
+
+    def forward(self, input):
+        input = self.fc0(input)
+        for i in range(self.n_ANNlayers - 1):
+            input = self.fc(self.dropout(F.relu(input)))
+        return input
+
+
 class VQA_LSTM(nn.Module):
     def __init__(
         self,
@@ -53,6 +68,8 @@ class VQA_LSTM(nn.Module):
             nn.Linear(in_features=256, out_features=input_size),
         )
 
+        self.ann = ANN(4096, input_size, 1)
+
         self.lstm = nn.LSTM(
             input_size=input_size,
             hidden_size=hidden_size,
@@ -60,12 +77,12 @@ class VQA_LSTM(nn.Module):
             batch_first=True,
         )
 
-        self.fc1 = nn.Sequential(
-            nn.Linear(in_features=hidden_size, out_features=16),
-            nn.Linear(in_features=16, out_features=1),
-        )
+        # self.fc1 = nn.Sequential(
+        #     nn.Linear(in_features=hidden_size, out_features=16),
+        #     nn.Linear(in_features=16, out_features=1),
+        # )
 
-        # self.fc1 = nn.Linear(in_features=hidden_size, out_features=1)
+        self.fc1 = nn.Linear(in_features=hidden_size, out_features=1)
 
     def TP(self, q, tau=12, beta=0.5):
         """subjectively-inspired temporal pooling"""
@@ -83,7 +100,9 @@ class VQA_LSTM(nn.Module):
     def forward(self, x):
         batch_size = x.size(0)
 
-        x = self.fc0(x)
+        # x = self.fc0(x)
+
+        x = self.ann(x)
 
         h0 = torch.zeros(self.num_layers, batch_size, self.hidden_size).to(
             device=self.device
@@ -93,11 +112,9 @@ class VQA_LSTM(nn.Module):
         )
 
         x, _ = self.lstm(x, (h0, c0))
-        # [batch, 300, 32]
 
         x = self.fc1(x)
-        # print(x)
-        # [batch, 300, 1]
+        # x = self.fc1(x[:, -1, :]) #lstm get last only
 
         scores = torch.zeros(batch_size).to(device=self.device)
         for i in range(batch_size):

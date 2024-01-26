@@ -17,11 +17,6 @@ from model import VQA_LSTM
 from engine import Engine
 
 if __name__ == "__main__":
-    # input_length = 240 * torch.ones(1, 1)
-    # aaa = torch.randn(1, 240, 1)
-    # qi = aaa[0, : int(input_length[0].numpy())]
-    # print(qi.shape)
-    # sys.exit()
     print("=" * 50)
 
     DATABASE = "CSCVQ"
@@ -69,11 +64,13 @@ if __name__ == "__main__":
 
             mos = np.load(mos_file)
             mos = np.float32(mos.item())
-            mos = (mos - MOS_MIN) / (MOS_MAX - MOS_MIN)  # normalization
+            mos = np.float32((mos - MOS_MIN) / (MOS_MAX - MOS_MIN))  # normalization
+            # mos = round(mos, 5)
+            # print(mos)
             # mos | float
 
             feature_data_list.append((feature, mos))
-
+    # sys.exit()
     TRAIN_SPLIT = int(0.8 * len(feature_data_list))
     train_data_list = feature_data_list[:TRAIN_SPLIT]
     test_data_list = feature_data_list[TRAIN_SPLIT:]

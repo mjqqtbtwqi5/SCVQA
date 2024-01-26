@@ -34,14 +34,16 @@ class Engine:
         y_list, y_pred_list = list(), list()
 
         for batch, (X, y) in enumerate(dataloader):
-            X, y = X.to(self.device), y.to(self.device)
-
+            X, y = X.to(device=self.device), y.to(device=self.device)
+            # .unsqueeze(dim=1)
             # 1. Prediction
             y_pred = model(X)
+            # print(y.shape)
 
             # 2. Calculate and accumulate loss
             loss = loss_fn(y_pred, y)
             train_loss += loss.item()
+            # print(f"y: {y} | y_pred: {y_pred}")
 
             # 3. Optimizer zero grad
             optimizer.zero_grad()
@@ -53,12 +55,16 @@ class Engine:
             optimizer.step()
 
             # 6. Saving for metrics calculation
-            for i in range(len(y)):
+            batch_size = len(y)
+            for i in range(batch_size):
                 _y = self.up_scale(y[i].item())
                 _y_pred = self.up_scale(y_pred[i].item())
-                # print(f"y: {_y} | y_pred: {_y_pred}")
                 y_list.append(_y)
                 y_pred_list.append(_y_pred)
+
+            print(
+                f"Training batch[{batch}]: last record -> y: {y_list[-1]} | y_pred: {y_pred_list[-1]}"
+            )  # print y and y pred values of the last one
 
         train_loss = train_loss / len(dataloader)
         train_PCC = pearsonr(y_pred_list, y_list)[0]
@@ -74,7 +80,10 @@ class Engine:
         model.eval()
         with torch.inference_mode():
             for batch, (X, y) in enumerate(dataloader):
-                X, y = X.to(self.device), y.to(self.device)
+                X, y = X.to(device=self.device), y.to(device=self.device)
+                # .unsqueeze(
+                #     dim=1
+                # )
 
                 # 1. Forward pass
                 test_y_pred = model(X)
@@ -84,12 +93,15 @@ class Engine:
                 test_loss += loss.item()
 
                 # 3. Saving for metrics calculation
-                for i in range(len(y)):
+                batch_size = len(y)
+                for i in range(batch_size):
                     _y = self.up_scale(y[i].item())
                     _test_y_pred = self.up_scale(test_y_pred[i].item())
-                    print(f"y: {_y} | test_y_pred: {_test_y_pred}")
                     y_list.append(_y)
                     test_y_pred_list.append(_test_y_pred)
+                print(
+                    f"Testing  batch[{batch}]: last record -> y: {y_list[-1]} | y_pred: {test_y_pred_list[-1]}"
+                )  # print y and y pred values of the last one
 
         test_loss = test_loss / len(dataloader)
         test_PCC = pearsonr(test_y_pred_list, y_list)[0]

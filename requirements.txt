@@ -6,4 +6,6 @@ av
 openpyxl
 tqdm
 scikit-video
+scikit-learn
 scipy
+matplotlib

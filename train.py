@@ -25,14 +25,41 @@ if __name__ == "__main__":
     BATCH_SIZE = 8
     # NUM_WORKERS = os.cpu_count()
     NUM_WORKERS = 0
-    NUM_EPOCHS = 500
+    NUM_EPOCHS = 50
+    LEARNING_RATE = 0.001
     SEED = 22035001
+    RNN = ["LSTM", "Transformer"]
+    MODEL_IMPL = RNN[0]
+    # MODEL_IMP = RNN[1]
+    USE_TRAINED = True  # load trained model
+
+    info = {
+        "DATABASE": DATABASE,
+        "TRAIN_DATA_SIZE": None,
+        "TEST_DATA_SIZE": None,
+        "CNN_MODULE": CNN_MODULE,
+        "DEVICE": DEVICE,
+        "BATCH_SIZE": BATCH_SIZE,
+        "NUM_WORKERS": NUM_WORKERS,
+        "NUM_EPOCHS": NUM_EPOCHS,
+        "LEARNING_RATE": LEARNING_RATE,
+        "SEED": SEED,
+        "MODEL_IMPL": MODEL_IMPL,
+        "DATE_TIME": None,
+        "TOTAL_TIME": None,
+    }
 
     FEATURE_DIR = Path(f"feature/{DATABASE}/{CNN_MODULE}/")
     DATA_VIDEO_MOS_FILE = Path(f"data/{DATABASE}/CSCVQ1.0-MOS.xlsx")
 
+    MODEL_DIR = Path(f"model/{MODEL_IMPL}/")
+    MODEL_LATEST_DIR = Path(f"model/{MODEL_IMPL}/latest/")
+    MODEL_LATEST_PT = Path(f"model/{MODEL_IMPL}/latest/model.pt")
+    MODEL_LATEST_RESULT = Path(f"model/{MODEL_IMPL}/latest/result.csv")
+    MODEL_LATEST_INFO = Path(f"model/{MODEL_IMPL}/latest/info.csv")
+
     print(
-        f"database: {DATABASE}, CNN module: {CNN_MODULE}, device: {DEVICE}, batch_size: {BATCH_SIZE}, num_workers: {NUM_WORKERS}, num_epochs: {NUM_EPOCHS}, seed: {SEED}"
+        f"database: {DATABASE}, CNN module: {CNN_MODULE}, Model implement: {MODEL_IMPL}, device: {DEVICE}, batch_size: {BATCH_SIZE}, num_workers: {NUM_WORKERS}, learning_rate: {LEARNING_RATE}, num_epochs: {NUM_EPOCHS}, seed: {SEED}"
     )
 
     # ==================================================
@@ -43,6 +70,7 @@ if __name__ == "__main__":
     dataset_df = pd.read_excel(str(DATA_VIDEO_MOS_FILE), header=None)
     dataset_df = dataset_df[:-1]
     # Delete last row that contains invalid label
+
     MOS_MAX = dataset_df[21].max()
     MOS_MIN = dataset_df[21].min()
 
@@ -65,12 +93,10 @@ if __name__ == "__main__":
             mos = np.load(mos_file)
             mos = np.float32(mos.item())
             mos = np.float32((mos - MOS_MIN) / (MOS_MAX - MOS_MIN))  # normalization
-            # mos = round(mos, 5)
-            # print(mos)
             # mos | float
 
             feature_data_list.append((feature, mos))
-    # sys.exit()
+
     TRAIN_SPLIT = int(0.8 * len(feature_data_list))
     train_data_list = feature_data_list[:TRAIN_SPLIT]
     test_data_list = feature_data_list[TRAIN_SPLIT:]
@@ -91,8 +117,11 @@ if __name__ == "__main__":
         shuffle=False,
     )
 
+    info["TRAIN_DATA_SIZE"] = len(train_dataset)
+    info["TEST_DATA_SIZE"] = len(test_dataset)
+
     print(
-        f"Number of training data: {len(train_dataset)} & testing data: {len(test_dataset)}"
+        f"Number of training data: {info['TRAIN_DATA_SIZE']} & testing data: {info['TEST_DATA_SIZE']}"
     )
     # ==================================================
     # 2. Training and testing step
@@ -106,12 +135,18 @@ if __name__ == "__main__":
         device=DEVICE
     )
 
+    if os.path.exists(MODEL_LATEST_PT) and USE_TRAINED:
+        print(f"Load model from {MODEL_LATEST_PT}")
+        model.load_state_dict(torch.load(f=MODEL_LATEST_PT))
+
     # loss_fn = nn.L1Loss()
     loss_fn = nn.MSELoss()
-    optimizer = torch.optim.Adam(params=model.parameters(), lr=0.001)
+    optimizer = torch.optim.Adam(params=model.parameters(), lr=LEARNING_RATE)
 
     engine = Engine(device=DEVICE, epochs=NUM_EPOCHS, mos_max=MOS_MAX, mos_min=MOS_MIN)
 
+    date_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    info["DATE_TIME"] = date_time
     start_time = timer()
     model_results = engine.train(
         model=model,
@@ -121,9 +156,25 @@ if __name__ == "__main__":
         test_dataloader=test_dataloader,
     )
     end_time = timer()
-    print(
-        f"Total training time: {datetime.timedelta(seconds=int(end_time-start_time))} (Hour:Minute:Second)"
+    total_time = (
+        f"{datetime.timedelta(seconds=int(end_time-start_time))} (Hour:Minute:Second)"
     )
-    print(
-        f"Total number of epochs: {NUM_EPOCHS} | Total number of results: {len(model_results['train_loss'])}"
+    info["TOTAL_TIME"] = total_time
+    print(f"Total training & testing time: {total_time}")
+
+    if os.path.exists(MODEL_LATEST_PT):
+        now = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        MODEL_LATEST_DIR.rename(MODEL_DIR / now)
+
+    MODEL_LATEST_DIR.mkdir(parents=True, exist_ok=True)
+
+    torch.save(
+        obj=model.state_dict(),
+        f=str(MODEL_LATEST_PT),
     )
+
+    model_results_df = pd.DataFrame(model_results)
+    model_results_df.to_csv(str(MODEL_LATEST_RESULT), index=False)
+
+    info_df = pd.DataFrame(info, index=[0])
+    info_df.to_csv(str(MODEL_LATEST_INFO))

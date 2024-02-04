@@ -13,53 +13,53 @@ import sys
 
 sys.path.append("./util")
 from dataset import FeatureDataset
-from model import VQA_LSTM
+from model import LSTM
 from engine import Engine
 
 if __name__ == "__main__":
     print("=" * 50)
 
     DATABASE = "CSCVQ"
-    CNN_MODULE = "ResNet50"
+    CNN_EXTRACTION = "ResNet50"
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
     BATCH_SIZE = 8
-    # NUM_WORKERS = os.cpu_count()
     NUM_WORKERS = 0
-    NUM_EPOCHS = 50
+    NUM_EPOCHS = 10
     LEARNING_RATE = 0.001
     SEED = 22035001
-    RNN = ["LSTM", "Transformer"]
-    MODEL_IMPL = RNN[0]
-    # MODEL_IMP = RNN[1]
-    USE_TRAINED = True  # load trained model
+    MODEL = "LSTM"  # ["LSTM", "Transformer"]
 
     info = {
-        "DATABASE": DATABASE,
+        "DATE_TIME": None,
+        "TOTAL_TIME": None,
+        "DIR": None,
+        "LOSS_VAL_CRITERION": None,
+        "RMSE_VAL_CRITERION": None,
+        "PCC_VAL_CRITERION": None,
+        "SROCC_VAL_CRITERION": None,
         "TRAIN_DATA_SIZE": None,
         "TEST_DATA_SIZE": None,
-        "CNN_MODULE": CNN_MODULE,
+        "MODEL": MODEL,
+        "DATABASE": DATABASE,
+        "CNN_EXTRACTION": CNN_EXTRACTION,
         "DEVICE": DEVICE,
         "BATCH_SIZE": BATCH_SIZE,
         "NUM_WORKERS": NUM_WORKERS,
         "NUM_EPOCHS": NUM_EPOCHS,
-        "LEARNING_RATE": LEARNING_RATE,
         "SEED": SEED,
-        "MODEL_IMPL": MODEL_IMPL,
-        "DATE_TIME": None,
-        "TOTAL_TIME": None,
+        "LEARNING_RATE": LEARNING_RATE,
     }
 
-    FEATURE_DIR = Path(f"feature/{DATABASE}/{CNN_MODULE}/")
+    FEATURE_DIR = Path(f"feature/{DATABASE}/{CNN_EXTRACTION}/")
     DATA_VIDEO_MOS_FILE = Path(f"data/{DATABASE}/CSCVQ1.0-MOS.xlsx")
 
-    MODEL_DIR = Path(f"model/{MODEL_IMPL}/")
-    MODEL_LATEST_DIR = Path(f"model/{MODEL_IMPL}/latest/")
-    MODEL_LATEST_PT = Path(f"model/{MODEL_IMPL}/latest/model.pt")
-    MODEL_LATEST_RESULT = Path(f"model/{MODEL_IMPL}/latest/result.csv")
-    MODEL_LATEST_INFO = Path(f"model/{MODEL_IMPL}/latest/info.csv")
+    MODEL_DIR = Path(f"model/{MODEL}/{DATABASE}/{CNN_EXTRACTION}/")
+    MODEL_DIR_HIST_FILE = Path(f"model/{MODEL}/{DATABASE}/{CNN_EXTRACTION}/history.csv")
+
+    print(f"[{MODEL}-based] | database: {DATABASE}, CNN extraction: {CNN_EXTRACTION}")
 
     print(
-        f"database: {DATABASE}, CNN module: {CNN_MODULE}, Model implement: {MODEL_IMPL}, device: {DEVICE}, batch_size: {BATCH_SIZE}, num_workers: {NUM_WORKERS}, learning_rate: {LEARNING_RATE}, num_epochs: {NUM_EPOCHS}, seed: {SEED}"
+        f"device: {DEVICE}, batch_size: {BATCH_SIZE}, num_workers: {NUM_WORKERS}, num_epochs: {NUM_EPOCHS}, seed: {SEED}, learning_rate: {LEARNING_RATE}"
     )
 
     # ==================================================
@@ -131,13 +131,16 @@ if __name__ == "__main__":
     torch.manual_seed(SEED)
     torch.cuda.manual_seed(SEED)
 
-    model = VQA_LSTM(device=DEVICE, input_size=64, hidden_size=32, num_layers=8).to(
+    model = LSTM(device=DEVICE, input_size=64, hidden_size=32, num_layers=8).to(
         device=DEVICE
     )
 
-    if os.path.exists(MODEL_LATEST_PT) and USE_TRAINED:
-        print(f"Load model from {MODEL_LATEST_PT}")
-        model.load_state_dict(torch.load(f=MODEL_LATEST_PT))
+    if os.path.exists(MODEL_DIR_HIST_FILE):
+        hist_df = pd.read_csv(MODEL_DIR_HIST_FILE)
+        model_file = Path(MODEL_DIR / hist_df["DIR"].iloc[-1] / "model.pt")
+        if os.path.exists(model_file):
+            print(f"Load model from {model_file}")
+            model.load_state_dict(torch.load(f=str(model_file)))
 
     # loss_fn = nn.L1Loss()
     loss_fn = nn.MSELoss()
@@ -145,8 +148,6 @@ if __name__ == "__main__":
 
     engine = Engine(device=DEVICE, epochs=NUM_EPOCHS, mos_max=MOS_MAX, mos_min=MOS_MIN)
 
-    date_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    info["DATE_TIME"] = date_time
     start_time = timer()
     model_results = engine.train(
         model=model,
@@ -159,22 +160,41 @@ if __name__ == "__main__":
     total_time = (
         f"{datetime.timedelta(seconds=int(end_time-start_time))} (Hour:Minute:Second)"
     )
-    info["TOTAL_TIME"] = total_time
     print(f"Total training & testing time: {total_time}")
 
-    if os.path.exists(MODEL_LATEST_PT):
-        now = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        MODEL_LATEST_DIR.rename(MODEL_DIR / now)
+    info["TOTAL_TIME"] = total_time
 
-    MODEL_LATEST_DIR.mkdir(parents=True, exist_ok=True)
+    info["LOSS_VAL_CRITERION"] = model_results[f"test_{type(loss_fn).__name__}"][-1]
+    info["RMSE_VAL_CRITERION"] = model_results["test_RMSE"][-1]
+    info["PCC_VAL_CRITERION"] = model_results["test_PCC"][-1]
+    info["SROCC_VAL_CRITERION"] = model_results["test_SROCC"][-1]
 
+    now = datetime.datetime.now()
+    date_time = now.strftime("%Y-%m-%d %H:%M:%S")
+    info["DATE_TIME"] = date_time
+
+    # Save model, result, history
+    dir = now.strftime("%Y%m%d_%H%M%S")
+    info["DIR"] = dir
+
+    model_dir = Path(MODEL_DIR / dir)
+    model_dir.mkdir(parents=True, exist_ok=True)
+
+    # model
+    model_file = model_dir / "model.pt"
     torch.save(
         obj=model.state_dict(),
-        f=str(MODEL_LATEST_PT),
+        f=str(model_file),
     )
 
+    # result
+    result_file = model_dir / "result.csv"
     model_results_df = pd.DataFrame(model_results)
-    model_results_df.to_csv(str(MODEL_LATEST_RESULT), index=False)
+    model_results_df.to_csv(str(result_file), index=False)
 
+    # history
     info_df = pd.DataFrame(info, index=[0])
-    info_df.to_csv(str(MODEL_LATEST_INFO))
+    if os.path.exists(MODEL_DIR_HIST_FILE):
+        info_df.to_csv(str(MODEL_DIR_HIST_FILE), mode="a", index=False, header=False)
+    else:
+        info_df.to_csv(str(MODEL_DIR_HIST_FILE), index=False)

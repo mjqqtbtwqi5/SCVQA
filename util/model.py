@@ -47,7 +47,12 @@ class ANN(nn.Module):
         return input
 
 
-class VQA_LSTM(nn.Module):
+class Transformer(nn.Module):
+    def __init__(self) -> None:
+        pass
+
+
+class LSTM(nn.Module):
     def __init__(
         self,
         device,
@@ -76,11 +81,6 @@ class VQA_LSTM(nn.Module):
             num_layers=num_layers,
             batch_first=True,
         )
-
-        # self.fc1 = nn.Sequential(
-        #     nn.Linear(in_features=hidden_size, out_features=16),
-        #     nn.Linear(in_features=16, out_features=1),
-        # )
 
         self.fc1 = nn.Linear(in_features=hidden_size, out_features=1)
 
@@ -119,9 +119,7 @@ class VQA_LSTM(nn.Module):
         scores = torch.zeros(batch_size).to(device=self.device)
         for i in range(batch_size):
             video_batch = x[i]
-            # print(video_batch.shape)
             frames_score = self.TP(video_batch)
             m = torch.mean(frames_score).to(device=self.device)
-            # print(f"m: {m}")
             scores[i] = m
         return scores

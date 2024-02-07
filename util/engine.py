@@ -2,9 +2,13 @@ import torch
 from torch.nn import Module
 from torch.utils.data import DataLoader
 from torch.optim import Optimizer
-from tqdm.auto import tqdm
+
 from scipy.stats import pearsonr, spearmanr
 from sklearn.metrics import mean_squared_error
+
+from tqdm.auto import tqdm
+
+import math
 
 
 class Engine:
@@ -65,7 +69,7 @@ class Engine:
             )  # print y and y pred values of the last one
 
         train_loss = train_loss / len(dataloader)
-        train_RMSE = mean_squared_error(y_list, y_pred_list, squared=False)
+        train_RMSE = math.sqrt(mean_squared_error(y_list, y_pred_list))
         train_PCC = pearsonr(y_pred_list, y_list)[0]
         train_SROCC = spearmanr(y_pred_list, y_list)[0]
 
@@ -100,7 +104,7 @@ class Engine:
                 )  # print y and y pred values of the last one
 
         test_loss = test_loss / len(dataloader)
-        test_RMSE = mean_squared_error(y_list, test_y_pred_list, squared=False)
+        test_RMSE = math.sqrt(mean_squared_error(y_list, test_y_pred_list))
         test_PCC = pearsonr(test_y_pred_list, y_list)[0]
         test_SROCC = spearmanr(test_y_pred_list, y_list)[0]
 

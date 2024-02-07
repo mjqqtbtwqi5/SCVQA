@@ -13,7 +13,7 @@ import sys
 
 sys.path.append("./util")
 from dataset import FeatureDataset
-from model import LSTM
+from model import LSTM, Transformer
 from engine import Engine
 
 if __name__ == "__main__":
@@ -24,10 +24,13 @@ if __name__ == "__main__":
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
     BATCH_SIZE = 8
     NUM_WORKERS = 0
-    NUM_EPOCHS = 10
+    NUM_EPOCHS = 100
     LEARNING_RATE = 0.001
     SEED = 22035001
-    MODEL = "LSTM"  # ["LSTM", "Transformer"]
+
+    _LSTM = "LSTM"
+    TRANSFORMER_ = "Transformer"
+    MODEL = TRANSFORMER_
 
     info = {
         "DATE_TIME": None,
@@ -131,8 +134,12 @@ if __name__ == "__main__":
     torch.manual_seed(SEED)
     torch.cuda.manual_seed(SEED)
 
-    model = LSTM(device=DEVICE, input_size=64, hidden_size=32, num_layers=8).to(
-        device=DEVICE
+    model = (
+        LSTM(device=DEVICE, input_size=64, hidden_size=32, num_layers=8).to(
+            device=DEVICE
+        )
+        if MODEL == _LSTM
+        else Transformer(device=DEVICE)
     )
 
     if os.path.exists(MODEL_DIR_HIST_FILE):

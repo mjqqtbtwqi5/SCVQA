@@ -7,21 +7,19 @@ from pathlib import Path
 class Report:
     def __init__(
         self,
-        info_file: str,
         result_file: str,
         report_dir: str,
         report_pdf_file: str,
         loss_img_file: str,
-        MSE_img_file: str,
+        RMSE_img_file: str,
         PCC_img_file: str,
         SROCC_img_file: str,
     ) -> None:
-        self.info_file = info_file
         self.result_file = result_file
         self.report_dir = report_dir
         self.report_pdf_file = report_pdf_file
         self.loss_img_file = loss_img_file
-        self.MSE_img_file = MSE_img_file
+        self.RMSE_img_file = RMSE_img_file
         self.PCC_img_file = PCC_img_file
         self.SROCC_img_file = SROCC_img_file
 
@@ -61,10 +59,10 @@ class PdfGenerator:
                     )
                     self.plot_curves(
                         results,
-                        "MSE",
-                        "train_MSE",
-                        "test_MSE",
-                        report.MSE_img_file,
+                        "RMSE",
+                        "train_RMSE",
+                        "test_RMSE",
+                        report.RMSE_img_file,
                     )
                     self.plot_curves(
                         results,

@@ -24,7 +24,7 @@ if __name__ == "__main__":
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
     BATCH_SIZE = 8
     NUM_WORKERS = 0
-    NUM_EPOCHS = 100
+    NUM_EPOCHS = 30
     LEARNING_RATE = 0.001
     SEED = 22035001
 

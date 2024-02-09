@@ -44,14 +44,14 @@ class PositionalEncoding(nn.Module):
         )
 
         pe = torch.zeros(1, max_len, d_model)
-        pe[0, :, 0::2] = torch.sin(position * div_term)
-        pe[0, :, 1::2] = torch.cos(position * div_term)
+        pe[:, :, 0::2] = torch.sin(position * div_term)
+        pe[:, :, 1::2] = torch.cos(position * div_term)
         self.register_buffer("pe", pe)
 
     def forward(self, x):
-        x = F.pad(
-            x, (0, 0, 1, 0, 0, 0), mode="constant"
-        )  # add 0s vector as [batch_size, 300, d_model] -> [batch_size, 301, d_model]
+        # x = F.pad(
+        #     x, (0, 0, 1, 0, 0, 0), mode="constant"
+        # )  # add 0s vector as [batch_size, 300, d_model] -> [batch_size, 301, d_model]
         x = x + self.pe[:, : x.size(1), :]
         return self.dropout(x)
 
@@ -62,11 +62,10 @@ class Transformer(nn.Module):
         device: str,
         p_dropout: float = 0.5,
         feature_size: int = 4096,
-        hidden_feature_size: int = 512,
         d_model=64,
         nhead=8,
-        num_encoder_layers=6,
-        dim_feedforward=256,
+        num_encoder_layers=8,
+        dim_feedforward=32,
         dropout=0.1,
     ):
         super().__init__()
@@ -74,21 +73,22 @@ class Transformer(nn.Module):
         self.device = device
 
         self.fc0 = nn.Sequential(
-            nn.Linear(in_features=feature_size, out_features=hidden_feature_size),
+            nn.Linear(in_features=feature_size, out_features=d_model),
             nn.ReLU(),
             nn.Dropout(p=p_dropout),
-            nn.Linear(in_features=hidden_feature_size, out_features=d_model),
+            nn.Linear(in_features=d_model, out_features=d_model),
         )
 
         self.pos_encoder = PositionalEncoding(d_model=d_model)
 
         encoder_layer = nn.TransformerEncoderLayer(
-            d_model,
-            nhead,
-            dim_feedforward,
-            dropout,
+            d_model=d_model,
+            nhead=nhead,
+            dim_feedforward=dim_feedforward,
+            dropout=dropout,
             batch_first=True,
         )
+
         encoder_norm = nn.LayerNorm(d_model)
         self.encoder = nn.TransformerEncoder(
             encoder_layer, num_encoder_layers, encoder_norm
@@ -97,18 +97,21 @@ class Transformer(nn.Module):
         self.fc1 = nn.Linear(d_model, 1)
 
     def forward(self, x):
+        batch_size = x.size(0)
 
-        # x = self.fc0(x)
+        x = self.fc0(x)
         x = self.pos_encoder(x)
         x = self.encoder(x)
         x = self.fc1(x)
         # print(x.shape)  # [batch_size, 301, 1]
 
-        x = x.squeeze(dim=2)
-        # print(x.shape)  # [batch_size, 301]
-        x = x[:, 0]  # use first reference
-        # print(x.shape)  # [batch_size]
-        return x
+        scores = torch.zeros(batch_size).to(device=self.device)
+        for i in range(batch_size):
+            video_batch = x[i]
+            frames_score = TP(video_batch)
+            m = torch.mean(frames_score).to(device=self.device)
+            scores[i] = m
+        return scores
 
 
 class LSTM(nn.Module):
@@ -143,19 +146,6 @@ class LSTM(nn.Module):
 
         self.fc1 = nn.Linear(in_features=hidden_size, out_features=1)
 
-    def TP(self, q, tau=12, beta=0.5):
-        """subjectively-inspired temporal pooling"""
-        q = torch.unsqueeze(torch.t(q), 0)
-        qm = -float("inf") * torch.ones((1, 1, tau - 1)).to(q.device)
-        qp = 10000.0 * torch.ones((1, 1, tau - 1)).to(q.device)  #
-        l = -F.max_pool1d(torch.cat((qm, -q), 2), tau, stride=1)
-        m = F.avg_pool1d(
-            torch.cat((q * torch.exp(-q), qp * torch.exp(-qp)), 2), tau, stride=1
-        )
-        n = F.avg_pool1d(torch.cat((torch.exp(-q), torch.exp(-qp)), 2), tau, stride=1)
-        m = m / n
-        return beta * m + (1 - beta) * l
-
     def forward(self, x):
         batch_size = x.size(0)
 
@@ -175,7 +165,21 @@ class LSTM(nn.Module):
         scores = torch.zeros(batch_size).to(device=self.device)
         for i in range(batch_size):
             video_batch = x[i]
-            frames_score = self.TP(video_batch)
+            frames_score = TP(video_batch)
             m = torch.mean(frames_score).to(device=self.device)
             scores[i] = m
         return scores
+
+
+def TP(q, tau=12, beta=0.5):
+    """subjectively-inspired temporal pooling"""
+    q = torch.unsqueeze(torch.t(q), 0)
+    qm = -float("inf") * torch.ones((1, 1, tau - 1)).to(q.device)
+    qp = 10000.0 * torch.ones((1, 1, tau - 1)).to(q.device)  #
+    l = -F.max_pool1d(torch.cat((qm, -q), 2), tau, stride=1)
+    m = F.avg_pool1d(
+        torch.cat((q * torch.exp(-q), qp * torch.exp(-qp)), 2), tau, stride=1
+    )
+    n = F.avg_pool1d(torch.cat((torch.exp(-q), torch.exp(-qp)), 2), tau, stride=1)
+    m = m / n
+    return beta * m + (1 - beta) * l

@@ -3,6 +3,7 @@ from torch import nn
 from torch.utils.data import DataLoader
 
 import os
+import random
 import numpy as np
 import pandas as pd
 from pathlib import Path
@@ -24,13 +25,13 @@ if __name__ == "__main__":
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
     BATCH_SIZE = 8
     NUM_WORKERS = 0
-    NUM_EPOCHS = 30
+    NUM_EPOCHS = 100
     LEARNING_RATE = 0.001
     SEED = 22035001
 
     _LSTM = "LSTM"
-    TRANSFORMER_ = "Transformer"
-    MODEL = TRANSFORMER_
+    _TRANSFORMER = "Transformer"
+    MODEL = _LSTM
 
     info = {
         "DATE_TIME": None,
@@ -100,6 +101,9 @@ if __name__ == "__main__":
 
             feature_data_list.append((feature, mos))
 
+    random.seed(SEED)
+    random.shuffle(feature_data_list)
+
     TRAIN_SPLIT = int(0.8 * len(feature_data_list))
     train_data_list = feature_data_list[:TRAIN_SPLIT]
     test_data_list = feature_data_list[TRAIN_SPLIT:]
@@ -135,11 +139,9 @@ if __name__ == "__main__":
     torch.cuda.manual_seed(SEED)
 
     model = (
-        LSTM(device=DEVICE, input_size=64, hidden_size=32, num_layers=8).to(
-            device=DEVICE
-        )
+        LSTM(device=DEVICE).to(device=DEVICE)
         if MODEL == _LSTM
-        else Transformer(device=DEVICE)
+        else Transformer(device=DEVICE).to(device=DEVICE)
     )
 
     if os.path.exists(MODEL_DIR_HIST_FILE):

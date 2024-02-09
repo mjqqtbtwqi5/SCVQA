@@ -59,13 +59,15 @@ class Engine:
             # 6. Saving for metrics calculation
             batch_size = len(y)
             for i in range(batch_size):
-                _y = self.up_scale(y[i].item())
-                _y_pred = self.up_scale(y_pred[i].item())
+                # _y = self.up_scale(y[i].item())
+                # _y_pred = self.up_scale(y_pred[i].item())
+                _y = y[i].item()
+                _y_pred = y_pred[i].item()
                 y_list.append(_y)
                 y_pred_list.append(_y_pred)
 
             print(
-                f"Training batch[{batch}]: last record -> y: {y_list[-1]} | y_pred: {y_pred_list[-1]}"
+                f"Training batch[{batch}]: last record -> y: {self.up_scale(y_list[-1])} | y_pred: {self.up_scale(y_pred_list[-1])}"
             )  # print y and y pred values of the last one
 
         train_loss = train_loss / len(dataloader)
@@ -95,12 +97,14 @@ class Engine:
                 # 3. Saving for metrics calculation
                 batch_size = len(y)
                 for i in range(batch_size):
-                    _y = self.up_scale(y[i].item())
-                    _test_y_pred = self.up_scale(test_y_pred[i].item())
+                    # _y = self.up_scale(y[i].item())
+                    # _test_y_pred = self.up_scale(test_y_pred[i].item())
+                    _y = y[i].item()
+                    _test_y_pred = test_y_pred[i].item()
                     y_list.append(_y)
                     test_y_pred_list.append(_test_y_pred)
                 print(
-                    f"Testing  batch[{batch}]: last record -> y: {y_list[-1]} | y_pred: {test_y_pred_list[-1]}"
+                    f"Testing  batch[{batch}]: last record -> y: {self.up_scale(y_list[-1])} | y_pred: {self.up_scale(test_y_pred_list[-1])}"
                 )  # print y and y pred values of the last one
 
         test_loss = test_loss / len(dataloader)

@@ -33,21 +33,6 @@ class ResNet50(nn.Module):
                 return mean, std
 
 
-class ANN(nn.Module):
-    def __init__(self, input_size=4096, reduced_size=128, n_ANNlayers=1, dropout_p=0.5):
-        super().__init__()
-        self.n_ANNlayers = n_ANNlayers
-        self.fc0 = nn.Linear(input_size, reduced_size)
-        self.dropout = nn.Dropout(p=dropout_p)
-        self.fc = nn.Linear(reduced_size, reduced_size)
-
-    def forward(self, input):
-        input = self.fc0(input)
-        for i in range(self.n_ANNlayers - 1):
-            input = self.fc(self.dropout(F.relu(input)))
-        return input
-
-
 class PositionalEncoding(nn.Module):
     def __init__(self, d_model: int, dropout: float = 0.1, max_len: int = 5000):
         super().__init__()
@@ -74,19 +59,26 @@ class PositionalEncoding(nn.Module):
 class Transformer(nn.Module):
     def __init__(
         self,
-        device,
-        d_model=512,
+        device: str,
+        p_dropout: float = 0.5,
+        feature_size: int = 4096,
+        hidden_feature_size: int = 512,
+        d_model=64,
         nhead=8,
         num_encoder_layers=6,
-        dim_feedforward=2048,
+        dim_feedforward=256,
         dropout=0.1,
     ):
         super().__init__()
 
         self.device = device
 
-        # self.fc0 = nn.Linear(4096, d_model)
-        self.ann = ANN(4096, d_model, 2)
+        self.fc0 = nn.Sequential(
+            nn.Linear(in_features=feature_size, out_features=hidden_feature_size),
+            nn.ReLU(),
+            nn.Dropout(p=p_dropout),
+            nn.Linear(in_features=hidden_feature_size, out_features=d_model),
+        )
 
         self.pos_encoder = PositionalEncoding(d_model=d_model)
 
@@ -97,11 +89,9 @@ class Transformer(nn.Module):
             dropout,
             batch_first=True,
         )
-        # encoder_norm = nn.LayerNorm(d_model)
+        encoder_norm = nn.LayerNorm(d_model)
         self.encoder = nn.TransformerEncoder(
-            encoder_layer,
-            num_encoder_layers,
-            # encoder_norm
+            encoder_layer, num_encoder_layers, encoder_norm
         )
 
         self.fc1 = nn.Linear(d_model, 1)
@@ -109,7 +99,6 @@ class Transformer(nn.Module):
     def forward(self, x):
 
         # x = self.fc0(x)
-        x = self.ann(x)
         x = self.pos_encoder(x)
         x = self.encoder(x)
         x = self.fc1(x)
@@ -125,7 +114,9 @@ class Transformer(nn.Module):
 class LSTM(nn.Module):
     def __init__(
         self,
-        device,
+        device: str,
+        p_dropout: float = 0.5,
+        feature_size: int = 4096,
         input_size: int = 64,
         hidden_size: int = 32,
         num_layers: int = 8,
@@ -133,17 +124,15 @@ class LSTM(nn.Module):
         super().__init__()
 
         self.device = device
-        self.input_size = input_size
         self.hidden_size = hidden_size
         self.num_layers = num_layers
 
         self.fc0 = nn.Sequential(
-            nn.Linear(in_features=4096, out_features=1024),
-            nn.Linear(in_features=1024, out_features=256),
-            nn.Linear(in_features=256, out_features=input_size),
+            nn.Linear(in_features=feature_size, out_features=input_size),
+            nn.ReLU(),
+            nn.Dropout(p=p_dropout),
+            nn.Linear(in_features=input_size, out_features=input_size),
         )
-
-        self.ann = ANN(4096, input_size, 1)
 
         self.lstm = nn.LSTM(
             input_size=input_size,
@@ -170,9 +159,7 @@ class LSTM(nn.Module):
     def forward(self, x):
         batch_size = x.size(0)
 
-        # x = self.fc0(x)
-
-        x = self.ann(x)
+        x = self.fc0(x)
 
         h0 = torch.zeros(self.num_layers, batch_size, self.hidden_size).to(
             device=self.device
@@ -184,7 +171,6 @@ class LSTM(nn.Module):
         x, _ = self.lstm(x, (h0, c0))
 
         x = self.fc1(x)
-        # x = self.fc1(x[:, -1, :]) #lstm get last only
 
         scores = torch.zeros(batch_size).to(device=self.device)
         for i in range(batch_size):

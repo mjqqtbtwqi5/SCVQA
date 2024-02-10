@@ -101,15 +101,13 @@ class Transformer(nn.Module):
         batch_size = x.size(0)
 
         x = self.fc0(x)
+
         x = self.pos_encoder(x)
         x = self.encoder(x)
+
         x = self.fc1(x)
-        # print(x.shape)
         x = self.fc2(x.squeeze(dim=2))
-        # print(x.shape)
-
         x = x.squeeze(dim=1)
-
         return x
 
         scores = torch.zeros(batch_size).to(device=self.device)
@@ -169,15 +167,9 @@ class LSTM(nn.Module):
 
         x, _ = self.lstm(x, (h0, c0))
 
-        print(x.shape)
-
         x = self.fc1(x)
-        # print(x.shape)
         x = self.fc2(x.squeeze(dim=2))
-        # print(x.shape)
-
         x = x.squeeze(dim=1)
-
         return x
 
         scores = torch.zeros(batch_size).to(device=self.device)

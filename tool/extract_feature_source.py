@@ -14,7 +14,9 @@ if __name__ == "__main__":
 
     FEATURE_DIR = Path(f"{PREFIX}feature/{DATABASE}/{CNN_EXTRACTION}/")
 
-    FEATURE_SOURCE_DIR = Path(f"{PREFIX}source/{DATABASE}/SCVD_feature.zip")
+    FEATURE_SOURCE_DIR = Path(
+        f"{PREFIX}source/{DATABASE}/feature/{CNN_EXTRACTION}/SCVD_feature.zip"
+    )
     FEATURE_EXTRACT_DIR = Path(f"{PREFIX}feature/{DATABASE}/")
 
     if os.path.exists(FEATURE_DIR):

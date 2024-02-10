@@ -9,6 +9,7 @@ import pandas as pd
 from pathlib import Path
 import datetime
 from timeit import default_timer as timer
+from argparse import ArgumentParser
 
 import sys
 
@@ -36,20 +37,54 @@ def get_mos_max_min(feature_data_list: list):
 if __name__ == "__main__":
     print("=" * 50)
 
-    _CSCVQ = "CSCVQ"
-    _SCVD = "SCVD"
-    DATABASE = _SCVD
-    CNN_EXTRACTION = "ResNet50"
-    DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-    BATCH_SIZE = 8
-    NUM_WORKERS = 0
-    NUM_EPOCHS = 100
-    LEARNING_RATE = 0.001
-    SEED = 22035001
-
     _LSTM = "LSTM"
     _TRANSFORMER = "Transformer"
-    MODEL = _TRANSFORMER
+    MODELS = [_LSTM, _TRANSFORMER]
+
+    _CSCVQ = "CSCVQ"
+    _SCVD = "SCVD"
+    DATABASES = [_CSCVQ, _SCVD]
+
+    _ResNet50 = "ResNet50"
+    CNN_EXTRACTIONS = [_ResNet50]
+
+    parser = ArgumentParser(description="Screen Content Video Quality Assessment")
+    parser.add_argument(
+        "--model",
+        type=str,
+        choices=MODELS,
+        required=True,
+    )
+    parser.add_argument(
+        "--database",
+        type=str,
+        choices=DATABASES,
+        required=True,
+    )
+    parser.add_argument(
+        "--cnn_extraction",
+        type=str,
+        choices=CNN_EXTRACTIONS,
+        required=True,
+    )
+    parser.add_argument("--batch_size", type=int, default=8)
+    parser.add_argument("--num_workers", type=int, default=0)
+    parser.add_argument("--num_epochs", type=int, default=100)
+    parser.add_argument("--learning_rate", type=int, default=0.001)
+    parser.add_argument("--seed", type=int, default=22035001)
+
+    args = parser.parse_args()
+
+    MODEL = args.model
+    DATABASE = args.database
+    CNN_EXTRACTION = args.cnn_extraction
+    BATCH_SIZE = args.batch_size
+    NUM_WORKERS = args.num_workers
+    NUM_EPOCHS = args.num_epochs
+    LEARNING_RATE = args.learning_rate
+    SEED = args.seed
+
+    DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
     info = {
         "DATE_TIME": None,

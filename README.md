@@ -29,6 +29,14 @@ python cnn_feature_extraction.py
 conda deactivate
 ```
 
-# Google Colab training
+# Training
 
-train.ipynb
+python train.py --model={LSTM,Transformer} --database={CSCVQ,SCVD} --cnn_extraction={ResNet50}
+
+```bash
+python train.py --model=LSTM --database=CSCVQ --cnn_extraction=ResNet50
+python train.py --model=LSTM --database=SCVD --cnn_extraction=ResNet50
+
+python train.py --model=Transformer --database=CSCVQ --cnn_extraction=ResNet50
+python train.py --model=Transformer --database=SCVD --cnn_extraction=ResNet50
+```

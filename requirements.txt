@@ -9,3 +9,4 @@ scikit-video
 scikit-learn
 scipy
 matplotlib
+argparse

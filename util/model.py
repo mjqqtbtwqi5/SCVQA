@@ -60,6 +60,7 @@ class Transformer(nn.Module):
     def __init__(
         self,
         device: str,
+        frame_size: int = 300,
         p_dropout: float = 0.5,
         feature_size: int = 4096,
         d_model=64,
@@ -95,7 +96,7 @@ class Transformer(nn.Module):
         )
 
         self.fc1 = nn.Linear(d_model, 1)
-        self.fc2 = nn.Linear(in_features=300, out_features=1)
+        self.fc2 = nn.Linear(in_features=frame_size, out_features=1)
 
     def forward(self, x):
         batch_size = x.size(0)
@@ -123,6 +124,7 @@ class LSTM(nn.Module):
     def __init__(
         self,
         device: str,
+        frame_size: int = 300,
         p_dropout: float = 0.5,
         feature_size: int = 4096,
         input_size: int = 64,
@@ -151,7 +153,7 @@ class LSTM(nn.Module):
 
         self.fc1 = nn.Linear(in_features=hidden_size, out_features=1)
 
-        self.fc2 = nn.Linear(in_features=300, out_features=1)
+        self.fc2 = nn.Linear(in_features=frame_size, out_features=1)
 
     def forward(self, x):
         batch_size = x.size(0)

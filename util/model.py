@@ -95,6 +95,7 @@ class Transformer(nn.Module):
         )
 
         self.fc1 = nn.Linear(d_model, 1)
+        self.fc2 = nn.Linear(in_features=300, out_features=1)
 
     def forward(self, x):
         batch_size = x.size(0)
@@ -103,7 +104,13 @@ class Transformer(nn.Module):
         x = self.pos_encoder(x)
         x = self.encoder(x)
         x = self.fc1(x)
-        # print(x.shape)  # [batch_size, 301, 1]
+        # print(x.shape)
+        x = self.fc2(x.squeeze(dim=2))
+        # print(x.shape)
+
+        x = x.squeeze(dim=1)
+
+        return x
 
         scores = torch.zeros(batch_size).to(device=self.device)
         for i in range(batch_size):
@@ -146,6 +153,8 @@ class LSTM(nn.Module):
 
         self.fc1 = nn.Linear(in_features=hidden_size, out_features=1)
 
+        self.fc2 = nn.Linear(in_features=300, out_features=1)
+
     def forward(self, x):
         batch_size = x.size(0)
 
@@ -160,7 +169,16 @@ class LSTM(nn.Module):
 
         x, _ = self.lstm(x, (h0, c0))
 
+        print(x.shape)
+
         x = self.fc1(x)
+        # print(x.shape)
+        x = self.fc2(x.squeeze(dim=2))
+        # print(x.shape)
+
+        x = x.squeeze(dim=1)
+
+        return x
 
         scores = torch.zeros(batch_size).to(device=self.device)
         for i in range(batch_size):
@@ -173,13 +191,15 @@ class LSTM(nn.Module):
 
 def TP(q, tau=12, beta=0.5):
     """subjectively-inspired temporal pooling"""
-    q = torch.unsqueeze(torch.t(q), 0)
-    qm = -float("inf") * torch.ones((1, 1, tau - 1)).to(q.device)
-    qp = 10000.0 * torch.ones((1, 1, tau - 1)).to(q.device)  #
-    l = -F.max_pool1d(torch.cat((qm, -q), 2), tau, stride=1)
+    q = torch.unsqueeze(torch.t(q), 0)  # [300, 1] -> [1, 300] -> [1, 1, 300]
+    qm = -float("inf") * torch.ones((1, 1, tau - 1)).to(q.device)  # [1,1,11] : -inf
+    qp = 10000.0 * torch.ones((1, 1, tau - 1)).to(q.device)  # [1,1,11] : 10000.0
+    l = -F.max_pool1d(torch.cat((qm, -q), 2), tau, stride=1)  # [1, 1, 300]
     m = F.avg_pool1d(
         torch.cat((q * torch.exp(-q), qp * torch.exp(-qp)), 2), tau, stride=1
-    )
-    n = F.avg_pool1d(torch.cat((torch.exp(-q), torch.exp(-qp)), 2), tau, stride=1)
+    )  # [1, 1, 300]
+    n = F.avg_pool1d(
+        torch.cat((torch.exp(-q), torch.exp(-qp)), 2), tau, stride=1
+    )  # [1, 1, 300]
     m = m / n
     return beta * m + (1 - beta) * l

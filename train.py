@@ -17,10 +17,28 @@ from dataset import FeatureDataset
 from model import LSTM, Transformer
 from engine import Engine
 
+
+def mos_normalization(feature_data_list: list, mos_max: float, mos_min: float):
+    for i in range(len(feature_data_list)):
+        data_tup = feature_data_list[i]
+        data_list = list(data_tup)
+        mos = data_list[1]
+        mos = np.float32((mos - mos_min) / (mos_max - mos_min))  # normalization
+        data_list[1] = mos
+        feature_data_list[i] = tuple(data_list)
+
+
+def get_mos_max_min(feature_data_list: list):
+    mos_list = [data[1] for data in feature_data_list]
+    return max(mos_list), min(mos_list)
+
+
 if __name__ == "__main__":
     print("=" * 50)
 
-    DATABASE = "CSCVQ"
+    _CSCVQ = "CSCVQ"
+    _SCVD = "SCVD"
+    DATABASE = _SCVD
     CNN_EXTRACTION = "ResNet50"
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
     BATCH_SIZE = 8
@@ -31,7 +49,7 @@ if __name__ == "__main__":
 
     _LSTM = "LSTM"
     _TRANSFORMER = "Transformer"
-    MODEL = _LSTM
+    MODEL = _TRANSFORMER
 
     info = {
         "DATE_TIME": None,
@@ -71,14 +89,8 @@ if __name__ == "__main__":
     # ==================================================
     print("=" * 50)
 
-    dataset_df = pd.read_excel(str(DATA_VIDEO_MOS_FILE), header=None)
-    dataset_df = dataset_df[:-1]
-    # Delete last row that contains invalid label
-
-    MOS_MAX = dataset_df[21].max()
-    MOS_MIN = dataset_df[21].min()
-
     feature_data_list = list()
+    MOS_MAX, MOS_MIN = None, None
 
     if not os.path.exists(FEATURE_DIR):
         print(f"Video feature not exists in {FEATURE_DIR}/")
@@ -96,10 +108,14 @@ if __name__ == "__main__":
 
             mos = np.load(mos_file)
             mos = np.float32(mos.item())
-            mos = np.float32((mos - MOS_MIN) / (MOS_MAX - MOS_MIN))  # normalization
             # mos | float
 
             feature_data_list.append((feature, mos))
+
+        MOS_MAX, MOS_MIN = get_mos_max_min(feature_data_list=feature_data_list)
+        mos_normalization(
+            feature_data_list=feature_data_list, mos_max=MOS_MAX, mos_min=MOS_MIN
+        )
 
     random.seed(SEED)
     random.shuffle(feature_data_list)

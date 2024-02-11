@@ -33,7 +33,7 @@ class Engine:
     ):
         model.train()
 
-        train_loss, train_RMSE, train_PCC, train_SROCC = 0, 0, 0, 0
+        train_loss, train_RMSE, train_PLCC, train_SROCC = 0, 0, 0, 0
 
         y_list, y_pred_list = list(), list()
 
@@ -72,13 +72,13 @@ class Engine:
 
         train_loss = train_loss / len(dataloader)
         train_RMSE = math.sqrt(mean_squared_error(y_list, y_pred_list))
-        train_PCC = pearsonr(y_pred_list, y_list)[0]
+        train_PLCC = pearsonr(y_pred_list, y_list)[0]
         train_SROCC = spearmanr(y_pred_list, y_list)[0]
 
-        return train_loss, train_RMSE, train_PCC, train_SROCC
+        return train_loss, train_RMSE, train_PLCC, train_SROCC
 
     def test_step(self, model: Module, dataloader: DataLoader, loss_fn: Module):
-        test_loss, test_RMSE, test_PCC, test_SROCC = 0, 0, 0, 0
+        test_loss, test_RMSE, test_PLCC, test_SROCC = 0, 0, 0, 0
 
         y_list, test_y_pred_list = list(), list()
 
@@ -109,10 +109,10 @@ class Engine:
 
         test_loss = test_loss / len(dataloader)
         test_RMSE = math.sqrt(mean_squared_error(y_list, test_y_pred_list))
-        test_PCC = pearsonr(test_y_pred_list, y_list)[0]
+        test_PLCC = pearsonr(test_y_pred_list, y_list)[0]
         test_SROCC = spearmanr(test_y_pred_list, y_list)[0]
 
-        return test_loss, test_RMSE, test_PCC, test_SROCC
+        return test_loss, test_RMSE, test_PLCC, test_SROCC
 
     def train(
         self,
@@ -125,23 +125,23 @@ class Engine:
         results = {
             f"train_{type(loss_fn).__name__}": [],
             "train_RMSE": [],
-            "train_PCC": [],
+            "train_PLCC": [],
             "train_SROCC": [],
             f"test_{type(loss_fn).__name__}": [],
             "test_RMSE": [],
-            "test_PCC": [],
+            "test_PLCC": [],
             "test_SROCC": [],
         }
 
         for epoch in tqdm(range(self.epochs)):
-            train_loss, train_RMSE, train_PCC, train_SROCC = self.train_step(
+            train_loss, train_RMSE, train_PLCC, train_SROCC = self.train_step(
                 model=model,
                 loss_fn=loss_fn,
                 optimizer=optimizer,
                 dataloader=train_dataloader,
             )
 
-            test_loss, test_RMSE, test_PCC, test_SROCC = self.test_step(
+            test_loss, test_RMSE, test_PLCC, test_SROCC = self.test_step(
                 model=model, dataloader=test_dataloader, loss_fn=loss_fn
             )
 
@@ -149,7 +149,7 @@ class Engine:
                 f"[Training] Epoch: {epoch+1} | "
                 f"{type(loss_fn).__name__}: {train_loss:.5f} | "
                 f"RMSE: {train_RMSE:.5f} | "
-                f"PCC: {train_PCC:.5f} | "
+                f"PLCC: {train_PLCC:.5f} | "
                 f"SROCC: {train_SROCC:.5f}"
             )
 
@@ -157,18 +157,18 @@ class Engine:
                 f"[Testing]  Epoch: {epoch+1} | "
                 f"{type(loss_fn).__name__}: {test_loss:.5f} | "
                 f"RMSE: {test_RMSE:.5f} | "
-                f"PCC: {test_PCC:.5f} | "
+                f"PLCC: {test_PLCC:.5f} | "
                 f"SROCC: {test_SROCC:.5f}"
             )
 
             results[f"train_{type(loss_fn).__name__}"].append(train_loss)
             results["train_RMSE"].append(train_RMSE)
-            results["train_PCC"].append(train_PCC)
+            results["train_PLCC"].append(train_PLCC)
             results["train_SROCC"].append(train_SROCC)
 
             results[f"test_{type(loss_fn).__name__}"].append(test_loss)
             results["test_RMSE"].append(test_RMSE)
-            results["test_PCC"].append(test_PCC)
+            results["test_PLCC"].append(test_PLCC)
             results["test_SROCC"].append(test_SROCC)
 
         return results

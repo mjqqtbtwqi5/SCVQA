@@ -92,7 +92,7 @@ if __name__ == "__main__":
         "DIR": None,
         "LOSS_VAL_CRITERION": None,
         "RMSE_VAL_CRITERION": None,
-        "PCC_VAL_CRITERION": None,
+        "PLCC_VAL_CRITERION": None,
         "SROCC_VAL_CRITERION": None,
         "TRAIN_DATA_SIZE": None,
         "TEST_DATA_SIZE": None,
@@ -226,7 +226,7 @@ if __name__ == "__main__":
 
     info["LOSS_VAL_CRITERION"] = model_results[f"test_{type(loss_fn).__name__}"][-1]
     info["RMSE_VAL_CRITERION"] = model_results["test_RMSE"][-1]
-    info["PCC_VAL_CRITERION"] = model_results["test_PCC"][-1]
+    info["PLCC_VAL_CRITERION"] = model_results["test_PLCC"][-1]
     info["SROCC_VAL_CRITERION"] = model_results["test_SROCC"][-1]
 
     now = datetime.datetime.now()

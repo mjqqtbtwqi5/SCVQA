@@ -12,8 +12,8 @@ if __name__ == "__main__":
     CNN_EXTRACTION = "ResNet50"
 
     _LSTM = "LSTM"
-    TRANSFORMER_ = "Transformer"
-    MODEL = TRANSFORMER_
+    _TRANSFORMER = "Transformer"
+    MODEL = _TRANSFORMER
 
     MODEL_DIR = Path(f"model/{MODEL}/{DATABASE}/{CNN_EXTRACTION}")
 
@@ -35,7 +35,7 @@ if __name__ == "__main__":
             report_pdf_file = f"{model_result_dir}/report/report.pdf"
             loss_img_file = f"{model_result_dir}/report/loss.png"
             RMSE_img_file = f"{model_result_dir}/report/RMSE.png"
-            PCC_img_file = f"{model_result_dir}/report/PCC.png"
+            PLCC_img_file = f"{model_result_dir}/report/PLCC.png"
             SROCC_img_file = f"{model_result_dir}/report/SROCC.png"
 
             reports.append(
@@ -45,7 +45,7 @@ if __name__ == "__main__":
                     report_pdf_file,
                     loss_img_file,
                     RMSE_img_file,
-                    PCC_img_file,
+                    PLCC_img_file,
                     SROCC_img_file,
                 )
             )

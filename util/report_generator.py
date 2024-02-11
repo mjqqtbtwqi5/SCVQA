@@ -12,7 +12,7 @@ class Report:
         report_pdf_file: str,
         loss_img_file: str,
         RMSE_img_file: str,
-        PCC_img_file: str,
+        PLCC_img_file: str,
         SROCC_img_file: str,
     ) -> None:
         self.result_file = result_file
@@ -20,7 +20,7 @@ class Report:
         self.report_pdf_file = report_pdf_file
         self.loss_img_file = loss_img_file
         self.RMSE_img_file = RMSE_img_file
-        self.PCC_img_file = PCC_img_file
+        self.PLCC_img_file = PLCC_img_file
         self.SROCC_img_file = SROCC_img_file
 
 
@@ -66,10 +66,10 @@ class PdfGenerator:
                     )
                     self.plot_curves(
                         results,
-                        "PCC",
-                        "train_PCC",
-                        "test_PCC",
-                        report.PCC_img_file,
+                        "PLCC",
+                        "train_PLCC",
+                        "test_PLCC",
+                        report.PLCC_img_file,
                     )
                     self.plot_curves(
                         results,

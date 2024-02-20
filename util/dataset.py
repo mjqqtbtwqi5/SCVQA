@@ -25,7 +25,7 @@ class FeatureDataset(Dataset):
         return (feature, mos)
 
 
-class VideoDataset(Dataset):
+class VideoDatasetCSCVQ(Dataset):
     def __init__(
         self,
         video_dir: str,

@@ -15,7 +15,7 @@ import shutil
 import sys
 
 sys.path.append("./util")
-from dataset import VideoDataset
+from dataset import VideoDatasetCSCVQ
 from model import ResNet50
 
 if __name__ == "__main__":
@@ -84,7 +84,7 @@ if __name__ == "__main__":
     dataset_df = dataset_df[:-1]
     # Delete last row that contains invalid label
 
-    dataset = VideoDataset(
+    dataset = VideoDatasetCSCVQ(
         video_dir=str(DATA_VIDEO_DIR),
         height=VIDEO_HEIGHT,
         width=VIDEO_WIDTH,

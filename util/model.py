@@ -111,13 +111,13 @@ class Transformer(nn.Module):
         x = x.squeeze(dim=1)
         return x
 
-        scores = torch.zeros(batch_size).to(device=self.device)
-        for i in range(batch_size):
-            video_batch = x[i]
-            frames_score = TP(video_batch)
-            m = torch.mean(frames_score).to(device=self.device)
-            scores[i] = m
-        return scores
+        # scores = torch.zeros(batch_size).to(device=self.device)
+        # for i in range(batch_size):
+        #     video_batch = x[i]
+        #     frames_score = TP(video_batch)
+        #     m = torch.mean(frames_score).to(device=self.device)
+        #     scores[i] = m
+        # return scores
 
 
 class LSTM(nn.Module):
@@ -174,13 +174,13 @@ class LSTM(nn.Module):
         x = x.squeeze(dim=1)
         return x
 
-        scores = torch.zeros(batch_size).to(device=self.device)
-        for i in range(batch_size):
-            video_batch = x[i]
-            frames_score = TP(video_batch)
-            m = torch.mean(frames_score).to(device=self.device)
-            scores[i] = m
-        return scores
+        # scores = torch.zeros(batch_size).to(device=self.device)
+        # for i in range(batch_size):
+        #     video_batch = x[i]
+        #     frames_score = TP(video_batch)
+        #     m = torch.mean(frames_score).to(device=self.device)
+        #     scores[i] = m
+        # return scores
 
 
 def TP(q, tau=12, beta=0.5):

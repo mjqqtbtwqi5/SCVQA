@@ -70,7 +70,7 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", type=int, default=8)
     parser.add_argument("--num_workers", type=int, default=0)
     parser.add_argument("--num_epochs", type=int, default=100)
-    parser.add_argument("--learning_rate", type=int, default=0.001)
+    parser.add_argument("--learning_rate", type=int, default=0.00001)
     parser.add_argument("--seed", type=int, default=22035001)
 
     args = parser.parse_args()
@@ -108,7 +108,6 @@ if __name__ == "__main__":
     }
 
     FEATURE_DIR = Path(f"feature/{DATABASE}/{CNN_EXTRACTION}/")
-    DATA_VIDEO_MOS_FILE = Path(f"data/{DATABASE}/CSCVQ1.0-MOS.xlsx")
 
     MODEL_DIR = Path(f"model/{MODEL}/{DATABASE}/{CNN_EXTRACTION}/")
     MODEL_DIR_HIST_FILE = Path(f"model/{MODEL}/{DATABASE}/{CNN_EXTRACTION}/history.csv")

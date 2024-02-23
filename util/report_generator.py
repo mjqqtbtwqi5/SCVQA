@@ -41,6 +41,7 @@ class PdfGenerator:
         plt.xlabel("Epochs")
         plt.legend()
         plt.savefig(save_path)
+        plt.close()
 
     def generate(self) -> None:
         if len(self.reports) > 0:

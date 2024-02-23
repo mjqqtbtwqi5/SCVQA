@@ -59,8 +59,6 @@ class Engine:
             # 6. Saving for metrics calculation
             batch_size = len(y)
             for i in range(batch_size):
-                # _y = self.up_scale(y[i].item())
-                # _y_pred = self.up_scale(y_pred[i].item())
                 _y = y[i].item()
                 _y_pred = y_pred[i].item()
                 y_list.append(_y)
@@ -97,8 +95,6 @@ class Engine:
                 # 3. Saving for metrics calculation
                 batch_size = len(y)
                 for i in range(batch_size):
-                    # _y = self.up_scale(y[i].item())
-                    # _test_y_pred = self.up_scale(test_y_pred[i].item())
                     _y = y[i].item()
                     _test_y_pred = test_y_pred[i].item()
                     y_list.append(_y)

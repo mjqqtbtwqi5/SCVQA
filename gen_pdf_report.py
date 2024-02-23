@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+import pandas as pd
 
 import sys
 
@@ -8,14 +9,19 @@ from report_generator import Report, PdfGenerator
 
 if __name__ == "__main__":
     print("=" * 50)
-    DATABASE = "CSCVQ"
-    CNN_EXTRACTION = "ResNet50"
+    _CSCVQ = "CSCVQ"
+    _SCVD = "SCVD"
+    DATABASE = _SCVD
 
     _LSTM = "LSTM"
     _TRANSFORMER = "Transformer"
-    MODEL = _TRANSFORMER
+    MODEL = _LSTM
+
+    CNN_EXTRACTION = "ResNet50"
 
     MODEL_DIR = Path(f"model/{MODEL}/{DATABASE}/{CNN_EXTRACTION}")
+    MODEL_REPORT_DIR = Path(f"model/{MODEL}/{DATABASE}/{CNN_EXTRACTION}/report")
+    MODEL_HISTORY_CSV = Path(f"model/{MODEL}/{DATABASE}/{CNN_EXTRACTION}/history.csv")
 
     # ==================================================
     # 1. Data preparation
@@ -26,28 +32,19 @@ if __name__ == "__main__":
         print(f"Model result not exists in {MODEL_DIR}/")
         sys.exit()
     else:
-        model_result_dir_list = [f.path for f in os.scandir(MODEL_DIR) if f.is_dir()]
+        directories = list(pd.read_csv(str(MODEL_HISTORY_CSV)).DIR.values)
+        result_df = pd.DataFrame()
+        for dir in directories:
+            model_result_csv = str(MODEL_DIR / dir / "result.csv")
+            result_df = pd.concat([result_df, pd.read_csv(model_result_csv)])
 
-        for model_result_dir in model_result_dir_list:
-            result_file = f"{model_result_dir}/result.csv"
+        report = Report(
+            result_df,
+            str(MODEL_REPORT_DIR),
+            str(MODEL_REPORT_DIR / "loss.png"),
+            str(MODEL_REPORT_DIR / "RMSE.png"),
+            str(MODEL_REPORT_DIR / "PLCC.png"),
+            str(MODEL_REPORT_DIR / "SROCC.png"),
+        )
 
-            report_dir = f"{model_result_dir}/report/"
-            report_pdf_file = f"{model_result_dir}/report/report.pdf"
-            loss_img_file = f"{model_result_dir}/report/loss.png"
-            RMSE_img_file = f"{model_result_dir}/report/RMSE.png"
-            PLCC_img_file = f"{model_result_dir}/report/PLCC.png"
-            SROCC_img_file = f"{model_result_dir}/report/SROCC.png"
-
-            reports.append(
-                Report(
-                    result_file,
-                    report_dir,
-                    report_pdf_file,
-                    loss_img_file,
-                    RMSE_img_file,
-                    PLCC_img_file,
-                    SROCC_img_file,
-                )
-            )
-
-    PdfGenerator(reports).generate()
+    PdfGenerator(report).generate()

@@ -1,5 +1,5 @@
 import os
-import pandas as pd
+from pandas import DataFrame
 import matplotlib.pyplot as plt
 from pathlib import Path
 
@@ -7,17 +7,15 @@ from pathlib import Path
 class Report:
     def __init__(
         self,
-        result_file: str,
+        result_df: DataFrame,
         report_dir: str,
-        report_pdf_file: str,
         loss_img_file: str,
         RMSE_img_file: str,
         PLCC_img_file: str,
         SROCC_img_file: str,
     ) -> None:
-        self.result_file = result_file
+        self.result_df = result_df
         self.report_dir = report_dir
-        self.report_pdf_file = report_pdf_file
         self.loss_img_file = loss_img_file
         self.RMSE_img_file = RMSE_img_file
         self.PLCC_img_file = PLCC_img_file
@@ -25,8 +23,8 @@ class Report:
 
 
 class PdfGenerator:
-    def __init__(self, reports: list[Report]) -> None:
-        self.reports = reports
+    def __init__(self, report: Report) -> None:
+        self.report = report
 
     def plot_curves(self, results, title, train_column, test_column, save_path):
         train_results = results[train_column]
@@ -44,42 +42,39 @@ class PdfGenerator:
         plt.close()
 
     def generate(self) -> None:
-        if len(self.reports) > 0:
-            for report in self.reports:
-                if os.path.exists(report.report_dir):
-                    print(f"Report already exist at: {report.report_dir}")
-                else:
-                    Path(report.report_dir).mkdir(parents=True, exist_ok=True)
-                    results = pd.read_csv(report.result_file)
-                    self.plot_curves(
-                        results,
-                        "MSE Loss",
-                        "train_MSELoss",
-                        "test_MSELoss",
-                        report.loss_img_file,
-                    )
-                    self.plot_curves(
-                        results,
-                        "RMSE",
-                        "train_RMSE",
-                        "test_RMSE",
-                        report.RMSE_img_file,
-                    )
-                    self.plot_curves(
-                        results,
-                        "PLCC",
-                        "train_PLCC",
-                        "test_PLCC",
-                        report.PLCC_img_file,
-                    )
-                    self.plot_curves(
-                        results,
-                        "SROCC",
-                        "train_SROCC",
-                        "test_SROCC",
-                        report.SROCC_img_file,
-                    )
-
-                    print(f"Report created at: {report.report_dir}")
+        if self.report:
+            if os.path.exists(self.report.report_dir):
+                print(f"Report already exist at: {self.report.report_dir}")
+            else:
+                Path(self.report.report_dir).mkdir(parents=True, exist_ok=True)
+                self.plot_curves(
+                    self.report.result_df,
+                    "MSE Loss",
+                    "train_MSELoss",
+                    "test_MSELoss",
+                    self.report.loss_img_file,
+                )
+                self.plot_curves(
+                    self.report.result_df,
+                    "RMSE",
+                    "train_RMSE",
+                    "test_RMSE",
+                    self.report.RMSE_img_file,
+                )
+                self.plot_curves(
+                    self.report.result_df,
+                    "PLCC",
+                    "train_PLCC",
+                    "test_PLCC",
+                    self.report.PLCC_img_file,
+                )
+                self.plot_curves(
+                    self.report.result_df,
+                    "SROCC",
+                    "train_SROCC",
+                    "test_SROCC",
+                    self.report.SROCC_img_file,
+                )
+                print(f"Report created at: {self.report.report_dir}")
         else:
-            print("No report(s) to be generated.")
+            print("No report to be generated.")

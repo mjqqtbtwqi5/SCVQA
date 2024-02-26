@@ -228,7 +228,7 @@ if __name__ == "__main__":
     date_time = now.strftime("%Y-%m-%d %H:%M:%S")
     info["DATE_TIME"] = date_time
 
-    # Save model, result, history
+    # Save model, result, history, prediction
     dir = now.strftime("%Y%m%d_%H%M%S")
     info["DIR"] = dir
 
@@ -253,3 +253,8 @@ if __name__ == "__main__":
         info_df.to_csv(str(MODEL_DIR_HIST_FILE), mode="a", index=False, header=False)
     else:
         info_df.to_csv(str(MODEL_DIR_HIST_FILE), index=False)
+
+    # prediction of last epoch
+    prediction_file = model_dir / "prediction.csv"
+    model_prediction_df = pd.DataFrame(engine.get_prediction()[-1])
+    model_prediction_df.to_csv(str(prediction_file), index=False)

@@ -20,6 +20,11 @@ class Engine:
         self.mos_max = mos_max
         self.mos_min = mos_min
 
+        self.prediction = list()
+
+    def get_prediction(self):
+        return self.prediction
+
     def up_scale(self, x):
         x = x * (self.mos_max - self.mos_min) + self.mos_min
         return x
@@ -79,6 +84,12 @@ class Engine:
         test_loss, test_RMSE, test_PLCC, test_SROCC = 0, 0, 0, 0
 
         y_list, test_y_pred_list = list(), list()
+        prediction = {
+            "y_norm": [],
+            "y_pred_norm": [],
+            "y": [],
+            "y_pred": [],
+        }
 
         model.eval()
         with torch.inference_mode():
@@ -99,6 +110,11 @@ class Engine:
                     _test_y_pred = test_y_pred[i].item()
                     y_list.append(_y)
                     test_y_pred_list.append(_test_y_pred)
+
+                    prediction["y_norm"].append(_y)
+                    prediction["y_pred_norm"].append(_test_y_pred)
+                    prediction["y"].append(self.up_scale(_y))
+                    prediction["y_pred"].append(self.up_scale(_test_y_pred))
                 print(
                     f"Testing  batch[{batch}]: last record -> y: {self.up_scale(y_list[-1])} | y_pred: {self.up_scale(test_y_pred_list[-1])}"
                 )  # print y and y pred values of the last one
@@ -108,7 +124,7 @@ class Engine:
         test_PLCC = pearsonr(test_y_pred_list, y_list)[0]
         test_SROCC = spearmanr(test_y_pred_list, y_list)[0]
 
-        return test_loss, test_RMSE, test_PLCC, test_SROCC
+        return test_loss, test_RMSE, test_PLCC, test_SROCC, prediction
 
     def train(
         self,
@@ -137,9 +153,11 @@ class Engine:
                 dataloader=train_dataloader,
             )
 
-            test_loss, test_RMSE, test_PLCC, test_SROCC = self.test_step(
+            test_loss, test_RMSE, test_PLCC, test_SROCC, prediction = self.test_step(
                 model=model, dataloader=test_dataloader, loss_fn=loss_fn
             )
+
+            self.prediction.append(prediction)
 
             print(
                 f"[Training] Epoch: {epoch+1} | "

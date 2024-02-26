@@ -8,18 +8,22 @@ class Report:
     def __init__(
         self,
         result_df: DataFrame,
+        prediction_df: DataFrame,
         report_dir: str,
         loss_img_file: str,
         RMSE_img_file: str,
         PLCC_img_file: str,
         SROCC_img_file: str,
+        prediction_img_file: str,
     ) -> None:
         self.result_df = result_df
+        self.prediction_df = prediction_df
         self.report_dir = report_dir
         self.loss_img_file = loss_img_file
         self.RMSE_img_file = RMSE_img_file
         self.PLCC_img_file = PLCC_img_file
         self.SROCC_img_file = SROCC_img_file
+        self.prediction_img_file = prediction_img_file
 
 
 class PdfGenerator:
@@ -38,6 +42,19 @@ class PdfGenerator:
         plt.title(title)
         plt.xlabel("Epochs")
         plt.legend()
+        plt.savefig(save_path)
+        plt.close()
+
+    def plot_prediction(self, results, title, x_column, y_column, save_path):
+        x = results[x_column]
+        y = results[y_column]
+
+        plt.figure()
+        plt.plot([0, 1], [0, 1], color="red")
+        plt.scatter(x, y)
+        plt.title(title)
+        plt.xlabel("Ground truth")
+        plt.ylabel("Prediction value")
         plt.savefig(save_path)
         plt.close()
 
@@ -74,6 +91,13 @@ class PdfGenerator:
                     "train_SROCC",
                     "test_SROCC",
                     self.report.SROCC_img_file,
+                )
+                self.plot_prediction(
+                    self.report.prediction_df,
+                    "Prediction",
+                    "y_norm",
+                    "y_pred_norm",
+                    self.report.prediction_img_file,
                 )
                 print(f"Report created at: {self.report.report_dir}")
         else:

@@ -15,7 +15,7 @@ if __name__ == "__main__":
 
     _LSTM = "LSTM"
     _TRANSFORMER = "Transformer"
-    MODEL = _LSTM
+    MODEL = _TRANSFORMER
 
     CNN_EXTRACTION = "ResNet50"
 
@@ -38,13 +38,18 @@ if __name__ == "__main__":
             model_result_csv = str(MODEL_DIR / dir / "result.csv")
             result_df = pd.concat([result_df, pd.read_csv(model_result_csv)])
 
+        model_prediction_csv = str(MODEL_DIR / directories[-1] / "prediction.csv")
+        prediction_df = pd.read_csv(model_prediction_csv)
+
         report = Report(
             result_df,
+            prediction_df,
             str(MODEL_REPORT_DIR),
             str(MODEL_REPORT_DIR / "loss.png"),
             str(MODEL_REPORT_DIR / "RMSE.png"),
             str(MODEL_REPORT_DIR / "PLCC.png"),
             str(MODEL_REPORT_DIR / "SROCC.png"),
+            str(MODEL_REPORT_DIR / "prediction.png"),
         )
 
     PdfGenerator(report).generate()

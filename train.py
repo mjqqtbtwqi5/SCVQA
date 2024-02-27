@@ -188,7 +188,11 @@ if __name__ == "__main__":
     torch.manual_seed(SEED)
     torch.cuda.manual_seed(SEED)
 
-    model = LSTM(device=DEVICE) if MODEL == _LSTM else Transformer(device=DEVICE)
+    model = (
+        LSTM(device=DEVICE).to(device=DEVICE)
+        if MODEL == _LSTM
+        else Transformer(device=DEVICE).to(device=DEVICE)
+    )
 
     if os.path.exists(MODEL_DIR_HIST_FILE):
         hist_df = pd.read_csv(MODEL_DIR_HIST_FILE)
@@ -197,7 +201,6 @@ if __name__ == "__main__":
             print(f"Load model from {model_file}")
             model.load_state_dict(torch.load(f=str(model_file)))
 
-    model.to(device=DEVICE)
     loss_fn = nn.MSELoss()
     optimizer = torch.optim.Adam(params=model.parameters(), lr=LEARNING_RATE)
 

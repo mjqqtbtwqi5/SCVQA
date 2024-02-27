@@ -50,7 +50,7 @@ class PdfGenerator:
         y = results[y_column]
 
         plt.figure()
-        plt.plot([0, 1], [0, 1], color="red")
+        plt.plot([0, 1], [0, 1], color="red", linestyle="--")
         plt.scatter(x, y)
         plt.title(title)
         plt.xlabel("Ground truth")

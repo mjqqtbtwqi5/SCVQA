@@ -9,13 +9,14 @@ from report_generator import Report, PdfGenerator
 
 if __name__ == "__main__":
     print("=" * 50)
-    _CSCVQ = "CSCVQ"
-    _SCVD = "SCVD"
-    DATABASE = _SCVD
 
     _LSTM = "LSTM"
     _TRANSFORMER = "Transformer"
     MODEL = _TRANSFORMER
+
+    _CSCVQ = "CSCVQ"
+    _SCVD = "SCVD"
+    DATABASE = _SCVD
 
     CNN_EXTRACTION = "ResNet50"
 

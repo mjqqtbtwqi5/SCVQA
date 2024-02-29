@@ -31,6 +31,8 @@ conda deactivate
 
 # Training
 
+Colab V100 GPU
+
 python train.py --model={LSTM,Transformer} --database={CSCVQ,SCVD} --cnn_extraction={ResNet50}
 
 Optional args

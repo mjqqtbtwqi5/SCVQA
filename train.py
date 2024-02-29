@@ -18,6 +18,9 @@ from dataset import FeatureDataset
 from model import LSTM, Transformer
 from engine import Engine
 
+sys.path.append("./VSFA")
+from VSFA import VSFA
+
 
 def mos_normalization(feature_data_list: list, mos_max: float, mos_min: float):
     for i in range(len(feature_data_list)):
@@ -39,7 +42,8 @@ if __name__ == "__main__":
 
     _LSTM = "LSTM"
     _TRANSFORMER = "Transformer"
-    MODELS = [_LSTM, _TRANSFORMER]
+    _VSFA_GRU = "VSFA_GRU"
+    MODELS = [_LSTM, _TRANSFORMER, _VSFA_GRU]
 
     _CSCVQ = "CSCVQ"
     _SCVD = "SCVD"
@@ -112,7 +116,18 @@ if __name__ == "__main__":
     MODEL_DIR = Path(f"model/{MODEL}/{DATABASE}/{CNN_EXTRACTION}/")
     MODEL_DIR_HIST_FILE = Path(f"model/{MODEL}/{DATABASE}/{CNN_EXTRACTION}/history.csv")
 
-    print(f"[{MODEL}-based] | database: {DATABASE}, CNN extraction: {CNN_EXTRACTION}")
+    (
+        # VSFA GRU
+        print(
+            f"[VSFA GRU-based] | database: {DATABASE}, CNN extraction: {CNN_EXTRACTION}"
+        )
+        if MODEL == _VSFA_GRU
+        else
+        # proposed LSTM/Transformer
+        print(
+            f"[{MODEL}-based] | database: {DATABASE}, CNN extraction: {CNN_EXTRACTION}"
+        )
+    )
 
     print(
         f"device: {DEVICE}, batch_size: {BATCH_SIZE}, num_workers: {NUM_WORKERS}, num_epochs: {NUM_EPOCHS}, seed: {SEED}, learning_rate: {LEARNING_RATE}"
@@ -188,11 +203,13 @@ if __name__ == "__main__":
     torch.manual_seed(SEED)
     torch.cuda.manual_seed(SEED)
 
-    model = (
-        LSTM(device=DEVICE).to(device=DEVICE)
-        if MODEL == _LSTM
-        else Transformer(device=DEVICE).to(device=DEVICE)
-    )
+    model = None
+    if MODEL == _LSTM:
+        model = LSTM(device=DEVICE).to(device=DEVICE)
+    elif MODEL == _TRANSFORMER:
+        model = Transformer(device=DEVICE).to(device=DEVICE)
+    else:
+        model = VSFA().to(device=DEVICE)
 
     if os.path.exists(MODEL_DIR_HIST_FILE):
         hist_df = pd.read_csv(MODEL_DIR_HIST_FILE)
@@ -201,7 +218,7 @@ if __name__ == "__main__":
             print(f"Load model from {model_file}")
             model.load_state_dict(torch.load(f=str(model_file)))
 
-    loss_fn = nn.MSELoss()
+    loss_fn = nn.L1Loss() if MODEL == _VSFA_GRU else nn.MSELoss()
     optimizer = torch.optim.Adam(params=model.parameters(), lr=LEARNING_RATE)
 
     engine = Engine(device=DEVICE, epochs=NUM_EPOCHS, mos_max=MOS_MAX, mos_min=MOS_MIN)

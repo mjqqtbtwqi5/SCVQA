@@ -27,8 +27,9 @@ class Report:
 
 
 class PdfGenerator:
-    def __init__(self, report: Report) -> None:
+    def __init__(self, report: Report, loss_fn: str) -> None:
         self.report = report
+        self.loss_fn = loss_fn
 
     def plot_curves(self, results, title, train_column, test_column, save_path):
         train_results = results[train_column]
@@ -66,9 +67,9 @@ class PdfGenerator:
                 Path(self.report.report_dir).mkdir(parents=True, exist_ok=True)
                 self.plot_curves(
                     self.report.result_df,
-                    "MSE Loss",
-                    "train_MSELoss",
-                    "test_MSELoss",
+                    self.loss_fn,
+                    f"train_{self.loss_fn}",
+                    f"test_{self.loss_fn}",
                     self.report.loss_img_file,
                 )
                 self.plot_curves(

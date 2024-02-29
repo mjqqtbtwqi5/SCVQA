@@ -12,45 +12,61 @@ if __name__ == "__main__":
 
     _LSTM = "LSTM"
     _TRANSFORMER = "Transformer"
-    MODEL = _TRANSFORMER
+    _VSFA_GRU = "VSFA_GRU"
+
+    MODELS = [_LSTM, _TRANSFORMER, _VSFA_GRU]
+
+    _MSELoss = "MSELoss"
+    _L1Loss = "L1Loss"
 
     _CSCVQ = "CSCVQ"
     _SCVD = "SCVD"
-    DATABASE = _SCVD
+    DATABASES = [_CSCVQ, _SCVD]
 
-    CNN_EXTRACTION = "ResNet50"
+    _ResNet50 = "ResNet50"
+    CNN_EXTRACTIONS = [_ResNet50]
 
-    MODEL_DIR = Path(f"model/{MODEL}/{DATABASE}/{CNN_EXTRACTION}")
-    MODEL_REPORT_DIR = Path(f"model/{MODEL}/{DATABASE}/{CNN_EXTRACTION}/report")
-    MODEL_HISTORY_CSV = Path(f"model/{MODEL}/{DATABASE}/{CNN_EXTRACTION}/history.csv")
+    for model in MODELS:
+        for database in DATABASES:
+            for cnn_extraction in CNN_EXTRACTIONS:
 
-    # ==================================================
-    # 1. Data preparation
-    # ==================================================
-    print("=" * 50)
-    reports = list()
-    if not os.path.exists(MODEL_DIR):
-        print(f"Model result not exists in {MODEL_DIR}/")
-        sys.exit()
-    else:
-        directories = list(pd.read_csv(str(MODEL_HISTORY_CSV)).DIR.values)
-        result_df = pd.DataFrame()
-        for dir in directories:
-            model_result_csv = str(MODEL_DIR / dir / "result.csv")
-            result_df = pd.concat([result_df, pd.read_csv(model_result_csv)])
+                loss_fn = _L1Loss if model == _VSFA_GRU else _MSELoss
 
-        model_prediction_csv = str(MODEL_DIR / directories[-1] / "prediction.csv")
-        prediction_df = pd.read_csv(model_prediction_csv)
+                model_dir = Path(f"model/{model}/{database}/{cnn_extraction}")
+                model_report_dir = Path(
+                    f"model/{model}/{database}/{cnn_extraction}/report"
+                )
+                model_history_csv = Path(
+                    f"model/{model}/{database}/{cnn_extraction}/history.csv"
+                )
 
-        report = Report(
-            result_df,
-            prediction_df,
-            str(MODEL_REPORT_DIR),
-            str(MODEL_REPORT_DIR / "loss.png"),
-            str(MODEL_REPORT_DIR / "RMSE.png"),
-            str(MODEL_REPORT_DIR / "PLCC.png"),
-            str(MODEL_REPORT_DIR / "SROCC.png"),
-            str(MODEL_REPORT_DIR / "prediction.png"),
-        )
+                reports = list()
+                if not os.path.exists(model_dir):
+                    print(f"Model result not exists in {model_dir}/")
+                    sys.exit()
+                else:
+                    directories = list(pd.read_csv(str(model_history_csv)).DIR.values)
+                    result_df = pd.DataFrame()
+                    for dir in directories:
+                        model_result_csv = str(model_dir / dir / "result.csv")
+                        result_df = pd.concat(
+                            [result_df, pd.read_csv(model_result_csv)]
+                        )
 
-    PdfGenerator(report).generate()
+                    model_prediction_csv = str(
+                        model_dir / directories[-1] / "prediction.csv"
+                    )
+                    prediction_df = pd.read_csv(model_prediction_csv)
+
+                    report = Report(
+                        result_df,
+                        prediction_df,
+                        str(model_report_dir),
+                        str(model_report_dir / "loss.png"),
+                        str(model_report_dir / "RMSE.png"),
+                        str(model_report_dir / "PLCC.png"),
+                        str(model_report_dir / "SROCC.png"),
+                        str(model_report_dir / "prediction.png"),
+                    )
+
+                PdfGenerator(report, loss_fn).generate()

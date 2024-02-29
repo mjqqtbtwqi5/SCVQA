@@ -46,4 +46,7 @@ python train.py --model=LSTM --database=SCVD --cnn_extraction=ResNet50 --batch_s
 
 python train.py --model=Transformer --database=CSCVQ --cnn_extraction=ResNet50 --batch_size=8 --num_epochs=200
 python train.py --model=Transformer --database=SCVD --cnn_extraction=ResNet50 --batch_size=32 --num_epochs=200
+
+python train.py --model=VSFA_GRU --database=CSCVQ --cnn_extraction=ResNet50 --batch_size=8 --num_epochs=200
+python train.py --model=VSFA_GRU --database=SCVD --cnn_extraction=ResNet50 --batch_size=32 --num_epochs=200
 ```

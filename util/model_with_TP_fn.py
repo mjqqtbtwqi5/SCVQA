@@ -1,9 +1,28 @@
 import torch
 import torch.nn as nn
 from torch import Tensor
+import torch.nn.functional as F
 from torchvision.models import resnet50, ResNet50_Weights
 
+
 import math
+import numpy as np
+
+
+def TP(q, tau=12, beta=0.5):
+    """subjectively-inspired temporal pooling"""
+    q = torch.unsqueeze(torch.t(q), 0)  # [300, 1] -> [1, 300] -> [1, 1, 300]
+    qm = -float("inf") * torch.ones((1, 1, tau - 1)).to(q.device)  # [1,1,11] : -inf
+    qp = 10000.0 * torch.ones((1, 1, tau - 1)).to(q.device)  # [1,1,11] : 10000.0
+    l = -F.max_pool1d(torch.cat((qm, -q), 2), tau, stride=1)  # [1, 1, 300]
+    m = F.avg_pool1d(
+        torch.cat((q * torch.exp(-q), qp * torch.exp(-qp)), 2), tau, stride=1
+    )  # [1, 1, 300]
+    n = F.avg_pool1d(
+        torch.cat((torch.exp(-q), torch.exp(-qp)), 2), tau, stride=1
+    )  # [1, 1, 300]
+    m = m / n
+    return beta * m + (1 - beta) * l
 
 
 class ResNet50(nn.Module):
@@ -90,9 +109,9 @@ class Transformer(nn.Module):
         )
 
         self.fc1 = nn.Linear(d_model, 1)
-        self.fc2 = nn.Linear(in_features=frame_size, out_features=1)
 
     def forward(self, x):
+        batch_size = x.size(0)
 
         x = self.fc0(x)
 
@@ -100,9 +119,14 @@ class Transformer(nn.Module):
         x = self.encoder(x)
 
         x = self.fc1(x)
-        x = self.fc2(x.squeeze(dim=2))
-        x = x.squeeze(dim=1)
-        return x
+
+        scores = torch.zeros(batch_size).to(device=self.device)
+        for i in range(batch_size):
+            video_batch = x[i]
+            frames_score = TP(video_batch)
+            m = torch.mean(frames_score).to(device=self.device)
+            scores[i] = m
+        return scores
 
 
 class LSTM(nn.Module):
@@ -138,8 +162,6 @@ class LSTM(nn.Module):
 
         self.fc1 = nn.Linear(in_features=hidden_size, out_features=1)
 
-        self.fc2 = nn.Linear(in_features=frame_size, out_features=1)
-
     def forward(self, x):
         batch_size = x.size(0)
 
@@ -155,6 +177,11 @@ class LSTM(nn.Module):
         x, _ = self.lstm(x, (h0, c0))
 
         x = self.fc1(x)
-        x = self.fc2(x.squeeze(dim=2))
-        x = x.squeeze(dim=1)
-        return x
+
+        scores = torch.zeros(batch_size).to(device=self.device)
+        for i in range(batch_size):
+            video_batch = x[i]
+            frames_score = TP(video_batch)
+            m = torch.mean(frames_score).to(device=self.device)
+            scores[i] = m
+        return scores

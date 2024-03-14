@@ -15,7 +15,7 @@ import sys
 
 sys.path.append("./util")
 from dataset import FeatureDataset
-from model import LSTM, Transformer
+from model_with_TP_fn import LSTM, Transformer
 from engine import Engine
 
 sys.path.append("./VSFA")

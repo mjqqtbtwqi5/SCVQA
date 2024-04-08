@@ -15,14 +15,23 @@ import shutil
 import sys
 
 sys.path.append("./util")
-from dataset import VideoDatasetCSCVQ
-from model import ResNet50
+from dataset import VideoDataset
+from model import ResNet18, ResNet34, ResNet50, ResNet101
 
 if __name__ == "__main__":
     print("=" * 50)
 
-    DATABASE = "CSCVQ"
-    CNN_MODULE = "ResNet50"
+    _CSCVQ = "CSCVQ"
+    _SCVD = "SCVD"
+
+    _ResNet18 = "ResNet18"
+    _ResNet34 = "ResNet34"
+    _ResNet50 = "ResNet50"
+    _ResNet101 = "ResNet101"
+
+    DATABASE = _CSCVQ
+    CNN_MODULE = _ResNet18
+
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
     FRAME_BATCH_SIZE = 32
     MAX_FRAME_SIZE = 300
@@ -36,7 +45,11 @@ if __name__ == "__main__":
 
     DATA_DIR = Path(f"data/{DATABASE}/")
     DATA_VIDEO_DIR = Path(f"data/{DATABASE}/videos/")
-    DATA_VIDEO_MOS_FILE = Path(f"data/{DATABASE}/CSCVQ1.0-MOS.xlsx")
+    DATA_VIDEO_MOS_FILE = (
+        Path(f"data/{DATABASE}/CSCVQ1.0-MOS.xlsx")
+        if DATABASE == _CSCVQ
+        else Path(f"data/{DATABASE}/MOS.xlsx")
+    )
 
     FEATURE_DIR = Path(f"feature/{DATABASE}/{CNN_MODULE}/")
 
@@ -81,15 +94,18 @@ if __name__ == "__main__":
     # ==================================================
     print("=" * 50)
     dataset_df = pd.read_excel(str(DATA_VIDEO_MOS_FILE), header=None)
-    dataset_df = dataset_df[:-1]
-    # Delete last row that contains invalid label
+    if DATABASE == _CSCVQ:
+        # Delete last row that contains invalid label
+        dataset_df = dataset_df[:-1]
 
-    dataset = VideoDatasetCSCVQ(
+    dataset = VideoDataset(
         video_dir=str(DATA_VIDEO_DIR),
         height=VIDEO_HEIGHT,
         width=VIDEO_WIDTH,
         dataset_df=dataset_df,
         max_frame_size=MAX_FRAME_SIZE,
+        vid_idx=0 if DATABASE == _CSCVQ else 1,
+        mos_idx=21 if DATABASE == _CSCVQ else 2,
     )
     print(f"Number of video data to be extracted: {len(dataset)}")
     # ==================================================
@@ -99,8 +115,16 @@ if __name__ == "__main__":
 
     start_time = timer()
 
-    resnet50 = ResNet50().to(device=DEVICE)
-    resnet50.eval()
+    cnn_model = None
+    if CNN_MODULE == _ResNet18:
+        cnn_model = ResNet18().to(device=DEVICE)
+    elif CNN_MODULE == _ResNet34:
+        cnn_model = ResNet34().to(device=DEVICE)
+    elif CNN_MODULE == _ResNet50:
+        cnn_model = ResNet50().to(device=DEVICE)
+    else:
+        cnn_model = ResNet101().to(device=DEVICE)
+    cnn_model.eval()
     with torch.inference_mode():
         for i in tqdm(range(len(dataset))):
             video_name, _ = dataset.get_video_info(i)
@@ -130,7 +154,7 @@ if __name__ == "__main__":
                 print(f"Extracting {video_name}: index[{i}] | frames[{head}, {tail-1}]")
                 batch_frames = video[head:tail]
 
-                mean, std = resnet50(batch_frames)
+                mean, std = cnn_model(batch_frames)
                 feature_mean = torch.cat((feature_mean, mean), 0)
                 feature_std = torch.cat((feature_std, std), 0)
 

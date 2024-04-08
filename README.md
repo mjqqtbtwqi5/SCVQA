@@ -43,8 +43,18 @@ Optional args
 --seed, type=int, default=22035001
 
 ```bash
+
+python train.py --model=LSTM --database=CSCVQ --cnn_extraction=ResNet18 --batch_size=8 --num_epochs=200
+python train.py --model=LSTM --database=SCVD --cnn_extraction=ResNet18 --batch_size=32 --num_epochs=200
+
+python train.py --model=LSTM --database=CSCVQ --cnn_extraction=ResNet34 --batch_size=8 --num_epochs=200
+python train.py --model=LSTM --database=SCVD --cnn_extraction=ResNet34 --batch_size=32 --num_epochs=200
+
 python train.py --model=LSTM --database=CSCVQ --cnn_extraction=ResNet50 --batch_size=8 --num_epochs=200
 python train.py --model=LSTM --database=SCVD --cnn_extraction=ResNet50 --batch_size=32 --num_epochs=200
+
+python train.py --model=LSTM --database=CSCVQ --cnn_extraction=ResNet101 --batch_size=8 --num_epochs=200
+python train.py --model=LSTM --database=SCVD --cnn_extraction=ResNet101 --batch_size=32 --num_epochs=200
 
 python train.py --model=Transformer --database=CSCVQ --cnn_extraction=ResNet50 --batch_size=8 --num_epochs=200
 python train.py --model=Transformer --database=SCVD --cnn_extraction=ResNet50 --batch_size=32 --num_epochs=200

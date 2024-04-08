@@ -15,7 +15,9 @@ import sys
 
 sys.path.append("./util")
 from dataset import FeatureDataset
-from model_with_TP_fn import LSTM, Transformer
+from model import LSTM, Transformer
+
+# from model_with_TP_fn import LSTM, Transformer
 from engine import Engine
 
 sys.path.append("./VSFA")
@@ -49,8 +51,12 @@ if __name__ == "__main__":
     _SCVD = "SCVD"
     DATABASES = [_CSCVQ, _SCVD]
 
+    _ResNet18 = "ResNet18"
+    _ResNet34 = "ResNet34"
     _ResNet50 = "ResNet50"
-    CNN_EXTRACTIONS = [_ResNet50]
+    _ResNet101 = "ResNet101"
+    _ResNet34_ResNet50 = "ResNet34_ResNet50"
+    CNN_EXTRACTIONS = [_ResNet18, _ResNet34, _ResNet50, _ResNet101, _ResNet34_ResNet50]
 
     parser = ArgumentParser(description="Screen Content Video Quality Assessment")
     parser.add_argument(
@@ -203,13 +209,27 @@ if __name__ == "__main__":
     torch.manual_seed(SEED)
     torch.cuda.manual_seed(SEED)
 
+    feature_size = None
+    if CNN_EXTRACTION == _ResNet18 or CNN_EXTRACTION == _ResNet34:
+        feature_size = 1024
+    elif CNN_EXTRACTION == _ResNet50 or CNN_EXTRACTION == _ResNet101:
+        feature_size = 4096
+    else:
+        feature_size = 5120
+
     model = None
     if MODEL == _LSTM:
-        model = LSTM(device=DEVICE).to(device=DEVICE)
+        model = LSTM(
+            device=DEVICE,
+            feature_size=feature_size,
+        ).to(device=DEVICE)
     elif MODEL == _TRANSFORMER:
-        model = Transformer(device=DEVICE).to(device=DEVICE)
+        model = Transformer(
+            device=DEVICE,
+            feature_size=feature_size,
+        ).to(device=DEVICE)
     else:
-        model = VSFA().to(device=DEVICE)
+        model = VSFA(input_size=feature_size).to(device=DEVICE)
 
     if os.path.exists(MODEL_DIR_HIST_FILE):
         hist_df = pd.read_csv(MODEL_DIR_HIST_FILE)

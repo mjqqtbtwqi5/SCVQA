@@ -100,6 +100,12 @@ class PdfGenerator:
                     "y_pred_norm",
                     self.report.prediction_img_file,
                 )
+                # self.plot_time_complexity(
+                #     self.report.result_df,
+                #     "Time Complexity",
+                #     "second",
+                #     self.report.time_complexity_file,
+                # )
                 print(f"Report created at: {self.report.report_dir}")
         else:
             print("No report to be generated.")

@@ -2,8 +2,16 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 import torch.nn.functional as F
-from torchvision.models import resnet50, ResNet50_Weights
-
+from torchvision.models import (
+    resnet18,
+    ResNet18_Weights,
+    resnet34,
+    ResNet34_Weights,
+    resnet50,
+    ResNet50_Weights,
+    resnet101,
+    ResNet101_Weights,
+)
 
 import math
 import numpy as np
@@ -25,12 +33,84 @@ def TP(q, tau=12, beta=0.5):
     return beta * m + (1 - beta) * l
 
 
+class ResNet18(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+        self.module_list = nn.Sequential(
+            *list(resnet18(weights=ResNet18_Weights.IMAGENET1K_V1).children())[:-2]
+        )
+
+        for p in self.module_list.parameters():
+            p.requires_grad = False
+
+    def global_std_pool2d(self, x: Tensor):
+        x = torch.std(x.view(x.size()[0], x.size()[1], -1, 1), dim=2, keepdim=True)
+        return x
+
+    def forward(self, x):
+        for i, module in enumerate(self.module_list):
+            x = module(x)
+            if i == (len(self.module_list) - 1):
+                mean = nn.functional.adaptive_avg_pool2d(x, 1)
+                std = self.global_std_pool2d(x)
+                return mean, std
+
+
+class ResNet34(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+        self.module_list = nn.Sequential(
+            *list(resnet34(weights=ResNet34_Weights.IMAGENET1K_V1).children())[:-2]
+        )
+
+        for p in self.module_list.parameters():
+            p.requires_grad = False
+
+    def global_std_pool2d(self, x: Tensor):
+        x = torch.std(x.view(x.size()[0], x.size()[1], -1, 1), dim=2, keepdim=True)
+        return x
+
+    def forward(self, x):
+        for i, module in enumerate(self.module_list):
+            x = module(x)
+            if i == (len(self.module_list) - 1):
+                mean = nn.functional.adaptive_avg_pool2d(x, 1)
+                std = self.global_std_pool2d(x)
+                return mean, std
+
+
 class ResNet50(nn.Module):
     def __init__(self):
         super().__init__()
 
         self.module_list = nn.Sequential(
             *list(resnet50(weights=ResNet50_Weights.IMAGENET1K_V2).children())[:-2]
+        )
+
+        for p in self.module_list.parameters():
+            p.requires_grad = False
+
+    def global_std_pool2d(self, x: Tensor):
+        x = torch.std(x.view(x.size()[0], x.size()[1], -1, 1), dim=2, keepdim=True)
+        return x
+
+    def forward(self, x):
+        for i, module in enumerate(self.module_list):
+            x = module(x)
+            if i == (len(self.module_list) - 1):
+                mean = nn.functional.adaptive_avg_pool2d(x, 1)
+                std = self.global_std_pool2d(x)
+                return mean, std
+
+
+class ResNet101(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+        self.module_list = nn.Sequential(
+            *list(resnet101(weights=ResNet101_Weights.IMAGENET1K_V2).children())[:-2]
         )
 
         for p in self.module_list.parameters():

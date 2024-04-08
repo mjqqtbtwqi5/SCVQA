@@ -7,6 +7,7 @@ from scipy.stats import pearsonr, spearmanr
 from sklearn.metrics import mean_squared_error
 
 from tqdm.auto import tqdm
+from timeit import default_timer as timer
 
 import math
 
@@ -135,6 +136,7 @@ class Engine:
         test_dataloader: DataLoader,
     ):
         results = {
+            "second": [],
             f"train_{type(loss_fn).__name__}": [],
             "train_RMSE": [],
             "train_PLCC": [],
@@ -144,7 +146,7 @@ class Engine:
             "test_PLCC": [],
             "test_SROCC": [],
         }
-
+        start_time = timer()
         for epoch in tqdm(range(self.epochs)):
             train_loss, train_RMSE, train_PLCC, train_SROCC = self.train_step(
                 model=model,
@@ -156,6 +158,8 @@ class Engine:
             test_loss, test_RMSE, test_PLCC, test_SROCC, prediction = self.test_step(
                 model=model, dataloader=test_dataloader, loss_fn=loss_fn
             )
+
+            second = int(timer() - start_time)
 
             self.prediction.append(prediction)
 
@@ -184,5 +188,7 @@ class Engine:
             results["test_RMSE"].append(test_RMSE)
             results["test_PLCC"].append(test_PLCC)
             results["test_SROCC"].append(test_SROCC)
+
+            results["second"].append(second)
 
         return results

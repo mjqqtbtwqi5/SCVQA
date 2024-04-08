@@ -25,7 +25,7 @@ class FeatureDataset(Dataset):
         return (feature, mos)
 
 
-class VideoDatasetCSCVQ(Dataset):
+class VideoDataset(Dataset):
     def __init__(
         self,
         video_dir: str,
@@ -33,6 +33,8 @@ class VideoDatasetCSCVQ(Dataset):
         width: int,
         dataset_df: DataFrame,
         max_frame_size: int,
+        vid_idx: int,
+        mos_idx: int,
     ) -> None:
         self.video_dir = video_dir
         self.height = height
@@ -40,8 +42,8 @@ class VideoDatasetCSCVQ(Dataset):
         self.dataset_df = dataset_df
         self.max_frame_size = max_frame_size
 
-        self.vid_idx = 0
-        self.mos_idx = 21
+        self.vid_idx = vid_idx
+        self.mos_idx = mos_idx
 
         self.transforms = transforms.Compose(
             [

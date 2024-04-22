@@ -13,6 +13,14 @@ This project will be separated into 2 parts:
    - Local machine: train.py
    - Google Colab: train.ipynb
 
+gitignore:
+
+data/
+source/
+model_bak\*/
+model/
+feature/
+
 # CNN Features Extraction using Anaconda env
 
 ```bash

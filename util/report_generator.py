@@ -38,8 +38,8 @@ class PdfGenerator:
 
         plt.figure()
 
-        plt.plot(epochs, train_results, label=train_column)
-        plt.plot(epochs, test_results, label=test_column)
+        plt.plot(epochs, train_results, label="train")
+        plt.plot(epochs, test_results, label="test")
         plt.title(title)
         plt.xlabel("Epochs")
         plt.legend()
@@ -55,7 +55,7 @@ class PdfGenerator:
         plt.scatter(x, y)
         plt.title(title)
         plt.xlabel("Ground truth")
-        plt.ylabel("Prediction value")
+        plt.ylabel("Predicted value")
         plt.savefig(save_path)
         plt.close()
 
@@ -95,7 +95,7 @@ class PdfGenerator:
                 )
                 self.plot_prediction(
                     self.report.prediction_df,
-                    "Prediction",
+                    "Testing/Prediction",
                     "y_norm",
                     "y_pred_norm",
                     self.report.prediction_img_file,

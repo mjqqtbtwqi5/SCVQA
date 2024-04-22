@@ -110,9 +110,9 @@ if __name__ == "__main__":
                     time_complexity_compare_second_list.append(result_df["second"])
 
                 PdfGenerator(report, loss_fn).generate()
-            plot_time_complexity(
-                time_complexity_compare_database,
-                time_complexity_compare_cnn_extraction,
-                time_complexity_compare_model_list,
-                time_complexity_compare_second_list,
-            )
+            # plot_time_complexity(
+            #     time_complexity_compare_database,
+            #     time_complexity_compare_cnn_extraction,
+            #     time_complexity_compare_model_list,
+            #     time_complexity_compare_second_list,
+            # )

@@ -34,9 +34,11 @@ pip install -r requirements.txt
 # conda deactivate
 ```
 
-# CNN Features Extraction/Training using Anaconda env
+# CNN Features Extraction with local machine
 
 python cnn_feature_extraction.py
+
+# Training with local machine
 
 python train.py --model={LSTM,Transformer,VSFA_GRU} --database={CSCVQ,SCVD} --cnn_extraction={\_ResNet18,\_ResNet34,\_ResNet50,\_ResNet101,\_ResNet34_ResNet50}
 
@@ -48,13 +50,20 @@ Optional args for train.py
 4. --learning_rate, default=0.00001
 5. --seed, type=int, default=22035001
 
+Examples:
+
 ```bash
 python train.py --model=Transformer --database=CSCVQ --cnn_extraction=ResNet50 --batch_size=8 --num_epochs=1000
+```
+
+```bash
 python train.py --model=Transformer --database=SCVD --cnn_extraction=ResNet50 --batch_size=32 --num_epochs=1000
+```
 
+```bash
 python train.py --model=LSTM --database=CSCVQ --cnn_extraction=ResNet50 --batch_size=8 --num_epochs=1000
-python train.py --model=LSTM --database=SCVD --cnn_extraction=ResNet50 --batch_size=32 --num_epochs=1000
+```
 
-python train.py --model=VSFA_GRU --database=CSCVQ --cnn_extraction=ResNet50 --batch_size=8 --num_epochs=1000
-python train.py --model=VSFA_GRU --database=SCVD --cnn_extraction=ResNet50 --batch_size=32 --num_epochs=1000
+```bash
+python train.py --model=LSTM --database=SCVD --cnn_extraction=ResNet50 --batch_size=32 --num_epochs=1000
 ```

@@ -15,7 +15,7 @@ This project will be separated into 2 parts:
    - Local machine: train.py
    - Google Colab: train.ipynb
 
-# CNN Features Extraction using Anaconda env
+# Setup for Anaconda env
 
 ```bash
 conda remove -n SCVQA-env --all
@@ -30,21 +30,23 @@ conda install -c conda-forge ffmpeg
 
 pip install -r requirements.txt
 
-python cnn_feature_extraction.py
 
-conda deactivate
+# conda deactivate
 ```
 
-# Training using Anaconda env
+# CNN Features Extraction/Training using Anaconda env
 
-python train.py --model={LSTM,Transformer} --database={CSCVQ,SCVD} --cnn_extraction={ResNet50}
+python cnn_feature_extraction.py
 
-Optional args
---batch_size, default=32
---num_workers, default=0
---num_epochs, default=100
---learning_rate, default=0.00001
---seed, type=int, default=22035001
+python train.py --model={LSTM,Transformer,VSFA_GRU} --database={CSCVQ,SCVD} --cnn_extraction={\_ResNet18,\_ResNet34,\_ResNet50,\_ResNet101,\_ResNet34_ResNet50}
+
+Optional args for train.py
+
+1. --batch_size, default=32
+2. --num_workers, default=0
+3. --num_epochs, default=100
+4. --learning_rate, default=0.00001
+5. --seed, type=int, default=22035001
 
 ```bash
 python train.py --model=Transformer --database=CSCVQ --cnn_extraction=ResNet50 --batch_size=8 --num_epochs=1000

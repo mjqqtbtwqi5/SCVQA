@@ -2,6 +2,8 @@
 
 Screen Content Video Quality Assessment
 
+Video data and feature data will not be included since file sizes of them are too large.
+
 # Description
 
 This project will be separated into 2 parts:
